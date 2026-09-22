@@ -422,7 +422,7 @@ Task: "Write component tests in tests/component/editor.test.ts for add/edit/remo
       lint, typecheck, the full test suite, and the production build on
       every PR and push, all four required to pass, per Constitution
       "Development Workflow & Quality Gates" (missing)
-- [ ] T044 Cut a tagged GitHub Release with the built
+- [X] T044 Cut a tagged GitHub Release with the built
       `dist/ha-simple-appliance-card.js` attached as a release asset, so
       HACS's custom-repository mechanism can actually fetch and install
       this card, per research.md §7 and spec FR-008 (missing)
