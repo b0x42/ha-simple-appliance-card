@@ -189,4 +189,52 @@ describe('ha-simple-appliance-card', () => {
       'sensor.boiler_heatingpumpmod',
     );
   });
+
+  it('shows an empty-state message when zero appliances are configured (T032, spec Edge Cases)', async () => {
+    const el = await renderCard({ type: 'custom:ha-simple-appliance-card', appliances: [] }, fakeHass({}));
+    expect(el.shadowRoot!.querySelector('.empty-state')).to.exist;
+    expect(el.shadowRoot!.querySelectorAll('.appliance')).to.have.lengthOf(0);
+  });
+
+  it('renders the same entity configured twice as two independent appliances with matching state (T034, spec Edge Cases)', async () => {
+    const hass = fakeHass({ 'sensor.boiler_heatingpumpmod': { state: '42' } });
+    const el = await renderCard(
+      {
+        type: 'custom:ha-simple-appliance-card',
+        appliances: [
+          { entity: 'sensor.boiler_heatingpumpmod' },
+          { entity: 'sensor.boiler_heatingpumpmod', name: 'Duplicate' },
+        ],
+      },
+      hass,
+    );
+    const appliances = el.shadowRoot!.querySelectorAll('.appliance');
+    expect(appliances).to.have.lengthOf(2);
+    expect(appliances[0]!.classList.contains('active')).to.be.true;
+    expect(appliances[1]!.classList.contains('active')).to.be.true;
+  });
+
+  it('shows the primary value and an unavailable indicator when only the target entity is unavailable (T035, spec Edge Cases)', async () => {
+    const hass = fakeHass({
+      'binary_sensor.boiler_heatingactive': { state: 'on' },
+      'sensor.boiler_curflowtemp': { state: '42.1' },
+      'sensor.thermostat_hc1_targetflowtemp': { state: 'unavailable' },
+    });
+    const el = await renderCard(
+      {
+        type: 'custom:ha-simple-appliance-card',
+        appliances: [
+          {
+            entity: 'sensor.boiler_curflowtemp',
+            active_entity: 'binary_sensor.boiler_heatingactive',
+            target_entity: 'sensor.thermostat_hc1_targetflowtemp',
+          },
+        ],
+      },
+      hass,
+    );
+    const appliance = el.shadowRoot!.querySelector('.appliance')!;
+    expect(appliance.querySelector('.appliance-value')!.textContent).to.include('42.1');
+    expect(appliance.querySelector('.appliance-target')!.textContent).to.include('unavailable');
+  });
 });

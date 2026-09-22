@@ -273,41 +273,41 @@ is unavailable.
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T032 [P] Implement the empty-state message when `appliances` is empty
+- [X] T032 [P] Implement the empty-state message when `appliances` is empty
       in `src/ha-simple-appliance-card.ts`, per spec Edge Cases
-- [ ] T033 [P] Implement wrap-to-additional-rows layout for more appliances
+- [X] T033 [P] Implement wrap-to-additional-rows layout for more appliances
       than fit one row, in `src/styles.ts`, per spec Edge Cases
-- [ ] T034 [P] Add a component-test regression case in
+- [X] T034 [P] Add a component-test regression case in
       `tests/component/card.test.ts` for the same `entity` configured as two
       appliances, confirming both render independently with matching live
       state, per spec Edge Cases
-- [ ] T035 [P] Add a component-test regression case in
+- [X] T035 [P] Add a component-test regression case in
       `tests/component/card.test.ts` for a `target_entity` that's unavailable
       while the primary entity is not, confirming the primary still renders
       and only the target shows unavailable, per spec Edge Cases
-- [ ] T036 [P] Write `README.md` § Installation: step-by-step HACS
+- [X] T036 [P] Write `README.md` § Installation: step-by-step HACS
       custom-repository install (add repository URL, category Lovelace,
       install, add resource if needed), per FR-011 and spec Assumptions
       (HACS already installed)
-- [ ] T037 [P] Write `README.md` § Configuration Reference: a table of every
+- [X] T037 [P] Write `README.md` § Configuration Reference: a table of every
       `Appliance` field (`entity`, `active_entity`, `target_entity`, `name`,
       `icon`, `active_threshold`) and every `CardConfig` field (`type`,
       `appliances`, `title`) with type, required/optional, and default, taken
       verbatim from data-model.md's field tables, per FR-011 (depends on T009
       for final field names)
-- [ ] T038 [P] Write `README.md` § Examples: four worked YAML examples —
+- [X] T038 [P] Write `README.md` § Examples: four worked YAML examples —
       minimal single-appliance, name/icon override, built-in heating preset
       (4 slots, including a `hot_water`/`heating_circuit` slot showing
       `active_entity` + `target_entity` together), and a standalone appliance
       with a `target_entity` — matching `contracts/card-config.md`, per
       FR-011/SC-006
-- [ ] T039 [P] Write `README.md` § Entities & Events: document every entity
+- [X] T039 [P] Write `README.md` § Entities & Events: document every entity
       domain the card reads (`sensor`, `number`, and any domain a user points
       it at) and the one event it emits (`hass-more-info`); no services are
       called — per constitution Principle III
-- [ ] T040 [P] Write initial `CHANGELOG.md` entry for `0.1.0` per constitution
+- [X] T040 [P] Write initial `CHANGELOG.md` entry for `0.1.0` per constitution
       Principle V
-- [ ] T041 Verify `npm run build` produces a single `dist/ha-simple-appliance-card.js`
+- [X] T041 Verify `npm run build` produces a single `dist/ha-simple-appliance-card.js`
       with no unresolved runtime imports, per constitution's Technology & Build
       Standards (depends on T005, and on all `src/` implementation tasks)
 - [ ] T042 Run through `quickstart.md` end-to-end against a real or test Home
