@@ -17,12 +17,12 @@ async function renderEditor(config: CardConfig): Promise<HaSimpleApplianceCardEd
   return el;
 }
 
-/** None of ha-entity-picker / ha-select / ha-textfield are registered in
- * this headless test environment, so each behaves as a plain element: it
- * still accepts the property bindings our editor sets on it (.value, .hass,
- * .label), and still dispatches whatever event a real interaction would —
- * these helpers fire that event by hand, the same way @open-wc/testing's
- * own fixture helpers simulate user input against unregistered elements. */
+/** ha-entity-picker and ha-textfield aren't registered in this headless test
+ * environment, so each behaves as a plain element: it still accepts the
+ * property bindings our editor sets on it (.value, .hass, .label), and
+ * still dispatches whatever event a real interaction would — these helpers
+ * fire that event by hand. The appliance-type field is a plain native
+ * <select>, so selectType() below drives it with real DOM interaction. */
 function pickEntity(root: ShadowRoot, selector: string, value: string): void {
   const picker = root.querySelector(selector)!;
   picker.dispatchEvent(new CustomEvent('value-changed', { detail: { value }, bubbles: true }));
@@ -35,11 +35,9 @@ function typeIntoTextField(root: ShadowRoot, selector: string, value: string): v
 }
 
 function selectType(root: ShadowRoot, typeId: string): void {
-  const select = root.querySelector('[data-field="new-appliance-type"]') as unknown as {
-    value: string;
-  };
+  const select = root.querySelector<HTMLSelectElement>('[data-field="new-appliance-type"]')!;
   select.value = typeId;
-  (select as unknown as EventTarget).dispatchEvent(new Event('selected', { bubbles: true }));
+  select.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 describe('ha-simple-appliance-card-editor', () => {

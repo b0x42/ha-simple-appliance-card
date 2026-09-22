@@ -4,7 +4,19 @@ All notable changes to this project are documented in this file.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
-## [0.2.1] - Unreleased
+## [0.2.2] - Unreleased
+
+### Fixed
+
+- The "Add appliance" Type dropdown (shipped in 0.2.1 as `ha-select` +
+  `mwc-list-item`) didn't respond to clicks in a live dashboard — a known
+  fragility point with Material Web Components' list-item/selection-index
+  resolution outside Home Assistant's own internal usage. Reverted just
+  that field to a plain native `<select>`, styled to match; everything
+  else from 0.2.1 (`ha-expansion-panel`, `ha-textfield`, `ha-icon-button`)
+  is unaffected and stays.
+
+## [0.2.1]
 
 ### Changed
 

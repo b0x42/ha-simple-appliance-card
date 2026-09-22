@@ -20,21 +20,26 @@ const APPLIANCE_TYPE_OPTIONS: ReadonlyArray<{ id: string; label: string }> = [
  * specs/001-configurable-appliance-cards/contracts/lifecycle-events.md for
  * the `config-changed` event contract this element implements.
  *
- * Built from Home Assistant's own native form elements
- * (`ha-entity-picker`, `ha-select`, `ha-textfield`, `ha-expansion-panel`,
- * `ha-icon-button`) so the editor looks and behaves like a stock HA card
- * editor rather than a raw HTML form — inspired by
- * github.com/ADNPolymerase/ha-appliance-card's editor UI (adopted for
- * look-and-feel only; this card keeps its own multi-appliance-per-card
- * config model, not that project's one-appliance-per-card design).
+ * Built mostly from Home Assistant's own native form elements
+ * (`ha-entity-picker`, `ha-textfield`, `ha-expansion-panel`, `ha-icon-button`)
+ * so the editor looks and behaves like a stock HA card editor rather than a
+ * raw HTML form — inspired by github.com/ADNPolymerase/ha-appliance-card's
+ * editor UI (adopted for look-and-feel only; this card keeps its own
+ * multi-appliance-per-card config model, not that project's
+ * one-appliance-per-card design). The appliance-type field is a deliberate
+ * exception: a plain native `<select>` rather than `ha-select` +
+ * `mwc-list-item`, after the latter shipped in 0.2.1 and didn't respond to
+ * clicks in a live dashboard — a known fragility point with Material Web
+ * Components' list-item/selection-index resolution outside HA's own
+ * internal usage. A native `<select>` has no such failure mode.
  *
- * All of these are Home Assistant frontend custom elements, resolved by tag
- * name at runtime (no import — registered globally by the HA frontend the
- * same way `<ha-icon>` is, per plan.md's distinction between that and a
- * bundled npm dependency like `lit`). They are undefined outside a real
- * Home Assistant page (e.g. in this project's own component tests), where
- * each still accepts its property bindings and still dispatches whatever
- * event tests fire at it by hand.
+ * The HA-provided elements above are Home Assistant frontend custom
+ * elements, resolved by tag name at runtime (no import — registered
+ * globally by the HA frontend the same way `<ha-icon>` is, per plan.md's
+ * distinction between that and a bundled npm dependency like `lit`). They
+ * are undefined outside a real Home Assistant page (e.g. in this project's
+ * own component tests), where each still accepts its property bindings and
+ * still dispatches whatever event tests fire at it by hand.
  */
 export class HaSimpleApplianceCardEditor extends LitElement {
   static override styles = editorStyles;
@@ -164,19 +169,20 @@ export class HaSimpleApplianceCardEditor extends LitElement {
   private _renderAddAppliance(): TemplateResult {
     return html`
       <div class="add-appliance-row">
-        <ha-select
-          data-field="new-appliance-type"
-          label="Type"
-          .value=${this._newApplianceType}
-          @selected=${(e: Event) => {
-            this._newApplianceType = (e.target as unknown as ValueTarget).value;
-          }}
-          @closed=${(e: Event) => e.stopPropagation()}
-        >
-          ${APPLIANCE_TYPE_OPTIONS.map(
-            (opt) => html`<mwc-list-item .value=${opt.id}>${opt.label}</mwc-list-item>`,
-          )}
-        </ha-select>
+        <label class="type-field">
+          Type
+          <select
+            data-field="new-appliance-type"
+            .value=${this._newApplianceType}
+            @change=${(e: Event) => {
+              this._newApplianceType = (e.target as HTMLSelectElement).value;
+            }}
+          >
+            ${APPLIANCE_TYPE_OPTIONS.map(
+              (opt) => html`<option value=${opt.id}>${opt.label}</option>`,
+            )}
+          </select>
+        </label>
         <button class="add-appliance" type="button" @click=${() => this._addAppliance()}>
           <ha-icon icon="mdi:plus"></ha-icon>
           Add appliance
