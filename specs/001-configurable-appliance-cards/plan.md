@@ -24,11 +24,12 @@ Assistant's standard entity more-info dialog — no custom tap action.
 Assistant frontend's own browser support baseline (evergreen Chrome/Firefox/Safari;
 no IE/legacy transpilation).
 
-**Primary Dependencies**: `lit` (already loaded by the Home Assistant frontend at
-runtime — used as an external/peer, not bundled) for the card and editor custom
-elements; `custom-card-helpers` (small, tree-shakeable, dev-time typed utilities:
-`fireEvent`, `hasConfigOrEntityChanged`) as the only bundled runtime dependency,
-justified per constitution Principle V in research.md.
+**Primary Dependencies**: `lit` for the card and editor custom elements, and
+`custom-card-helpers` (small, typed utilities: `fireEvent`,
+`hasConfigOrEntityChanged`) — both bundled into the single build output (see
+research.md §1: `lit` cannot be treated as externally-provided, since Home
+Assistant gives third-party custom cards no shared module scope to resolve it
+against), justified per constitution Principle V in research.md.
 
 **Storage**: N/A. The card holds no persistent storage of its own — its
 configuration is the Lovelace dashboard YAML/storage object Home Assistant already

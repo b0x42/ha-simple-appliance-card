@@ -1,0 +1,6 @@
+{
+  "name": "Simple Appliance Card",
+  "render_readme": true,
+  "content_in_root": false,
+  "filename": "ha-simple-appliance-card.js"
+}

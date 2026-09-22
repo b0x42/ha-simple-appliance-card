@@ -2,18 +2,31 @@
 
 ## 1. Component framework
 
-**Decision**: `lit` (LitElement), declared as a normal `import` but treated as
-already present in the browser at runtime (Home Assistant's own frontend loads
-Lit for its own components; the constitution's Principle V explicitly names `lit`
-as a primitive to prefer over new dependencies).
+**Decision**: `lit` (LitElement), bundled into the card's own single output
+file (not marked `external` in Rollup).
 
 **Rationale**: Every actively maintained HA custom card in the ecosystem is built
 on Lit; using anything else forces users to load a second reactive-rendering
-library alongside the one Home Assistant already ships, directly violating
-Principle V (bundle-size/maintenance justification). Lit's `@customElement`,
-`@property`/`@state` decorators and scoped-style `css` tagged template map
-cleanly onto the required custom-card lifecycle (`setConfig`, `hass` setter,
-`render()`).
+library alongside the one Home Assistant's own frontend uses, working against
+Principle V's spirit even though it must still be bundled (see correction below).
+Lit's `@customElement`, `@property`/`@state` decorators and scoped-style `css`
+tagged template map cleanly onto the required custom-card lifecycle
+(`setConfig`, `hass` setter, `render()`).
+
+**Correction (recorded during `/speckit-implement`)**: this decision originally
+proposed treating `lit` as a Rollup `external` "already loaded by the Home
+Assistant frontend at runtime." That is incorrect and was caught before writing
+the build config: `lit` ships no UMD/global build, and Home Assistant provides
+third-party custom cards no shared module scope or import map to resolve a bare
+`import ... from 'lit'` against at runtime — each custom card loads as an
+independent `<script>` with its own module graph. Marking it `external` with no
+`output.globals` mapping would leave an unresolved import in the built bundle,
+which is both broken at runtime and a direct violation of the constitution's
+"single self-contained JavaScript bundle... no unresolved runtime imports"
+requirement. **`lit` is therefore bundled**, same as `custom-card-helpers`; this
+is the standard, accepted tradeoff every other HACS Lovelace card ships with
+(each card carries its own copy of Lit), and is justified under Principle V as
+the only way to satisfy the "no unresolved runtime imports" constraint at all.
 
 **Alternatives considered**: Vanilla `HTMLElement` (no framework) — rejected,
 would hand-roll change detection and templating that Lit already provides for
@@ -41,8 +54,8 @@ the research stage.
 ## 3. Build tool
 
 **Decision**: Rollup, producing a single IIFE bundle (`dist/ha-simple-appliance-card.js`)
-with `lit` external (loaded from the HA frontend's own module graph) and
-`custom-card-helpers` bundled in.
+with both `lit` and `custom-card-helpers` bundled in (see §1 correction) and
+nothing marked `external`.
 
 **Rationale**: Rollup is the toolchain most HACS Lovelace cards already use, has
 first-class support for marking a dependency `external` while still bundling
@@ -58,10 +71,11 @@ long-term maintenance risk.
 
 ## 4. Testing stack
 
-**Decision**: `@web/test-runner` running specs in real headless Chromium, with
-`@open-wc/testing` for `fixture()`/`html` component-test helpers, plus
-plain Mocha-style `describe`/`it` unit tests (no DOM) for pure logic, all under
-one `c8` coverage report gating the constitution's 80% branch-coverage floor on
+**Decision**: `@web/test-runner` running specs in real headless Chromium (via
+`@web/test-runner-playwright`), with `@open-wc/testing` for `fixture()`/`html`
+component-test helpers, plus plain Mocha-style `describe`/`it` unit tests (no
+DOM) for pure logic, all under `@web/test-runner`'s built-in (istanbul-based)
+coverage reporter gating the constitution's 80% branch-coverage floor on
 non-DOM logic (`state.ts`, `presets.ts`, `config.ts`).
 
 **Rationale**: Lit's own documented testing pattern uses `@web/test-runner` in a

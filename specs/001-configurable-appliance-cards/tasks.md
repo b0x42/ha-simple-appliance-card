@@ -30,25 +30,27 @@ root; build output isolated in `dist/`.
 **Purpose**: Project scaffolding and toolchain, per plan.md Technical Context
 and research.md §§1-4, 7.
 
-- [ ] T001 Create directory structure per plan.md Project Structure: `src/`,
+- [X] T001 Create directory structure per plan.md Project Structure: `src/`,
       `tests/unit/`, `tests/component/`, `dist/` (empty, git-ignored contents)
-- [ ] T002 Initialize `package.json`: `lit` as a dependency treated as external
-      at build time, `custom-card-helpers` as a bundled runtime dependency,
-      `typescript`, `rollup` + plugins, `@web/test-runner`, `@open-wc/testing`,
-      `c8`, `eslint`, `prettier` as devDependencies (research.md §§1-4)
-- [ ] T003 [P] Configure `tsconfig.json` with `strict: true` per constitution
+- [X] T002 Initialize `package.json`: `lit` and `custom-card-helpers` as
+      bundled runtime dependencies (research.md §1 correction), `typescript`,
+      `rollup` + plugins, `@web/test-runner` (+`-playwright`), `@open-wc/testing`,
+      `eslint`, `prettier` as devDependencies (research.md §§1-4)
+- [X] T003 [P] Configure `tsconfig.json` with `strict: true` per constitution
       Principle I ("All source code MUST be written in TypeScript with `strict`
       mode enabled")
-- [ ] T004 [P] Configure `.eslintrc.cjs` + Prettier so both "MUST run clean
-      (zero errors) before merge" per constitution Principle I
-- [ ] T005 [P] Configure `rollup.config.mjs`: `lit` external, `custom-card-helpers`
-      bundled, single IIFE output `dist/ha-simple-appliance-card.js`, per
-      research.md §3 and constitution's "single self-contained JavaScript
-      bundle" requirement
-- [ ] T006 [P] Configure `web-test-runner.config.mjs` (headless Chromium) with
-      `c8` coverage enforcing the 80% branch-coverage floor on `src/state.ts`,
+- [X] T004 [P] Configure `eslint.config.mjs` (flat config, required by
+      ESLint 9) + Prettier so both "MUST run clean (zero errors) before merge"
+      per constitution Principle I
+- [X] T005 [P] Configure `rollup.config.mjs`: bundle `lit` and
+      `custom-card-helpers` into a single IIFE output
+      `dist/ha-simple-appliance-card.js`, per research.md §3 and the
+      constitution's "single self-contained JavaScript bundle" requirement
+- [X] T006 [P] Configure `web-test-runner.config.mjs` (headless Chromium via
+      `@web/test-runner-playwright`) with its built-in coverage reporter
+      enforcing the 80% branch-coverage floor on `src/state.ts`,
       `src/presets.ts`, `src/config.ts` per constitution Principle II
-- [ ] T007 [P] Create root `hacs.json` (`name`, `render_readme: true`,
+- [X] T007 [P] Create root `hacs.json` (`name`, `render_readme: true`,
       `content_in_root: false`, `filename: ha-simple-appliance-card.js`) per
       research.md §7 and spec FR-008
 
