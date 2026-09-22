@@ -17,6 +17,15 @@ async function renderEditor(config: CardConfig): Promise<HaSimpleApplianceCardEd
   return el;
 }
 
+/** ha-entity-picker isn't registered in this headless test environment, so
+ * it behaves as a plain element: still accepts .hass/.value property
+ * bindings, and this simulates a user's selection the same way the real
+ * picker's own `value-changed` event does. */
+function pickEntity(root: ShadowRoot, selector: string, value: string): void {
+  const picker = root.querySelector(selector)!;
+  picker.dispatchEvent(new CustomEvent('value-changed', { detail: { value }, bubbles: true }));
+}
+
 describe('ha-simple-appliance-card-editor', () => {
   it('adding an appliance row emits config-changed with one more appliance', async () => {
     const el = await renderEditor({ type: 'custom:ha-simple-appliance-card', appliances: [] });
@@ -29,16 +38,14 @@ describe('ha-simple-appliance-card-editor', () => {
     expect(detail.config.appliances).to.have.lengthOf(1);
   });
 
-  it('editing an appliance entity field emits config-changed with the updated value', async () => {
+  it('editing an appliance entity picker emits config-changed with the updated value', async () => {
     const el = await renderEditor({
       type: 'custom:ha-simple-appliance-card',
       appliances: [{ entity: 'sensor.a' }],
     });
 
     const listener = oneEvent(el, 'config-changed');
-    const input = el.shadowRoot!.querySelector<HTMLInputElement>('[data-field="entity"]')!;
-    input.value = 'sensor.b';
-    input.dispatchEvent(new Event('change', { bubbles: true }));
+    pickEntity(el.shadowRoot!, '[data-field="entity"]', 'sensor.b');
     const event = await listener;
 
     const detail = (event as CustomEvent<{ config: CardConfig }>).detail;
@@ -77,23 +84,31 @@ describe('ha-simple-appliance-card-editor', () => {
 
   it('applying the heating preset with 4 slots emits config-changed with 4 appliances using preset defaults (2.1)', async () => {
     const el = await renderEditor({ type: 'custom:ha-simple-appliance-card', appliances: [] });
+    const root = el.shadowRoot!;
 
-    const set = (field: string, value: string) => {
-      const input = el.shadowRoot!.querySelector<HTMLInputElement>(`[data-preset-field="${field}"]`)!;
-      input.value = value;
-      input.dispatchEvent(new Event('change', { bubbles: true }));
-    };
-    set('circulation_pump', 'sensor.boiler_heatingpumpmod');
-    set('gas_burner', 'sensor.boiler_curburnpow');
-    set('hot_water.entity', 'sensor.boiler_dhw_curtemp');
-    set('hot_water.active_entity', 'binary_sensor.boiler_dhw_charging');
-    set('hot_water.target_entity', 'number.boiler_dhw_seltemp');
-    set('heating_circuit.entity', 'sensor.boiler_curflowtemp');
-    set('heating_circuit.active_entity', 'binary_sensor.boiler_heatingactive');
-    set('heating_circuit.target_entity', 'sensor.thermostat_hc1_targetflowtemp');
+    pickEntity(root, '[data-preset-field="circulation_pump"]', 'sensor.boiler_heatingpumpmod');
+    pickEntity(root, '[data-preset-field="gas_burner"]', 'sensor.boiler_curburnpow');
+    pickEntity(root, '[data-preset-field="hot_water.entity"]', 'sensor.boiler_dhw_curtemp');
+    pickEntity(
+      root,
+      '[data-preset-field="hot_water.active_entity"]',
+      'binary_sensor.boiler_dhw_charging',
+    );
+    pickEntity(root, '[data-preset-field="hot_water.target_entity"]', 'number.boiler_dhw_seltemp');
+    pickEntity(root, '[data-preset-field="heating_circuit.entity"]', 'sensor.boiler_curflowtemp');
+    pickEntity(
+      root,
+      '[data-preset-field="heating_circuit.active_entity"]',
+      'binary_sensor.boiler_heatingactive',
+    );
+    pickEntity(
+      root,
+      '[data-preset-field="heating_circuit.target_entity"]',
+      'sensor.thermostat_hc1_targetflowtemp',
+    );
 
     const listener = oneEvent(el, 'config-changed');
-    el.shadowRoot!.querySelector<HTMLButtonElement>('.apply-preset')!.click();
+    root.querySelector<HTMLButtonElement>('.apply-preset')!.click();
     const event = await listener;
 
     const detail = (event as CustomEvent<{ config: CardConfig }>).detail;
@@ -112,12 +127,7 @@ describe('ha-simple-appliance-card-editor', () => {
       appliances: [{ entity: 'sensor.existing' }],
     });
 
-    const set = (field: string, value: string) => {
-      const input = el.shadowRoot!.querySelector<HTMLInputElement>(`[data-preset-field="${field}"]`)!;
-      input.value = value;
-      input.dispatchEvent(new Event('change', { bubbles: true }));
-    };
-    set('circulation_pump', 'sensor.boiler_heatingpumpmod');
+    pickEntity(el.shadowRoot!, '[data-preset-field="circulation_pump"]', 'sensor.boiler_heatingpumpmod');
 
     const listener = oneEvent(el, 'config-changed');
     el.shadowRoot!.querySelector<HTMLButtonElement>('.apply-preset')!.click();
