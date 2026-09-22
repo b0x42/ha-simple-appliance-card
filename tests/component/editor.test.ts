@@ -17,19 +17,29 @@ async function renderEditor(config: CardConfig): Promise<HaSimpleApplianceCardEd
   return el;
 }
 
-/** ha-entity-picker isn't registered in this headless test environment, so
- * it behaves as a plain element: still accepts .hass/.value property
- * bindings, and this simulates a user's selection the same way the real
- * picker's own `value-changed` event does. */
+/** None of ha-entity-picker / ha-select / ha-textfield are registered in
+ * this headless test environment, so each behaves as a plain element: it
+ * still accepts the property bindings our editor sets on it (.value, .hass,
+ * .label), and still dispatches whatever event a real interaction would —
+ * these helpers fire that event by hand, the same way @open-wc/testing's
+ * own fixture helpers simulate user input against unregistered elements. */
 function pickEntity(root: ShadowRoot, selector: string, value: string): void {
   const picker = root.querySelector(selector)!;
   picker.dispatchEvent(new CustomEvent('value-changed', { detail: { value }, bubbles: true }));
 }
 
+function typeIntoTextField(root: ShadowRoot, selector: string, value: string): void {
+  const field = root.querySelector(selector) as unknown as { value: string };
+  field.value = value;
+  (field as unknown as EventTarget).dispatchEvent(new Event('input', { bubbles: true }));
+}
+
 function selectType(root: ShadowRoot, typeId: string): void {
-  const select = root.querySelector<HTMLSelectElement>('[data-field="new-appliance-type"]')!;
+  const select = root.querySelector('[data-field="new-appliance-type"]') as unknown as {
+    value: string;
+  };
   select.value = typeId;
-  select.dispatchEvent(new Event('change', { bubbles: true }));
+  (select as unknown as EventTarget).dispatchEvent(new Event('selected', { bubbles: true }));
 }
 
 describe('ha-simple-appliance-card-editor', () => {
@@ -80,6 +90,14 @@ describe('ha-simple-appliance-card-editor', () => {
     expect(detail.config.appliances?.[1]).to.deep.equal({ entity: '' });
   });
 
+  it('each appliance row renders inside a collapsible ha-expansion-panel', async () => {
+    const el = await renderEditor({
+      type: 'custom:ha-simple-appliance-card',
+      appliances: [{ entity: 'sensor.a' }],
+    });
+    expect(el.shadowRoot!.querySelector('ha-expansion-panel')).to.exist;
+  });
+
   it('editing an appliance entity picker emits config-changed with the updated value', async () => {
     const el = await renderEditor({
       type: 'custom:ha-simple-appliance-card',
@@ -92,6 +110,20 @@ describe('ha-simple-appliance-card-editor', () => {
 
     const detail = (event as CustomEvent<{ config: CardConfig }>).detail;
     expect(detail.config.appliances?.[0]?.entity).to.equal('sensor.b');
+  });
+
+  it('editing the name text field emits config-changed with the updated value', async () => {
+    const el = await renderEditor({
+      type: 'custom:ha-simple-appliance-card',
+      appliances: [{ entity: 'sensor.a' }],
+    });
+
+    const listener = oneEvent(el, 'config-changed');
+    typeIntoTextField(el.shadowRoot!, '[data-field="name"]', 'My Pump');
+    const event = await listener;
+
+    const detail = (event as CustomEvent<{ config: CardConfig }>).detail;
+    expect(detail.config.appliances?.[0]?.name).to.equal('My Pump');
   });
 
   it('removing an appliance row emits config-changed with that appliance gone', async () => {
@@ -124,7 +156,7 @@ describe('ha-simple-appliance-card-editor', () => {
     expect(detail.config.appliances?.[1]?.entity).to.equal('sensor.a');
   });
 
-  it('overriding a preset-added appliance name via the normal per-row field still works (2.2)', async () => {
+  it('overriding a preset-added appliance name via its own field still works (2.2)', async () => {
     const el = await renderEditor({ type: 'custom:ha-simple-appliance-card', appliances: [] });
 
     selectType(el.shadowRoot!, 'circulation_pump');
@@ -134,9 +166,7 @@ describe('ha-simple-appliance-card-editor', () => {
     await el.updateComplete;
 
     listener = oneEvent(el, 'config-changed');
-    const nameInput = el.shadowRoot!.querySelector<HTMLInputElement>('[data-field="name"]')!;
-    nameInput.value = 'My Pump';
-    nameInput.dispatchEvent(new Event('change', { bubbles: true }));
+    typeIntoTextField(el.shadowRoot!, '[data-field="name"]', 'My Pump');
     const event = (await listener) as CustomEvent<{ config: CardConfig }>;
     expect(event.detail.config.appliances?.[0]?.name).to.equal('My Pump');
   });

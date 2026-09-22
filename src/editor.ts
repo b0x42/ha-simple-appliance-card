@@ -6,6 +6,9 @@ import { HEATING_PRESET_SLOTS } from './presets.js';
 import { editorStyles } from './styles.js';
 
 type ValueChangedEvent = CustomEvent<{ value: string }>;
+interface ValueTarget {
+  value: string;
+}
 
 const APPLIANCE_TYPE_OPTIONS: ReadonlyArray<{ id: string; label: string }> = [
   { id: '', label: 'Generic appliance' },
@@ -17,19 +20,21 @@ const APPLIANCE_TYPE_OPTIONS: ReadonlyArray<{ id: string; label: string }> = [
  * specs/001-configurable-appliance-cards/contracts/lifecycle-events.md for
  * the `config-changed` event contract this element implements.
  *
- * Appliances are added one at a time: pick a type (a built-in heating preset
- * slot, or "Generic"), then Add — this pre-fills the new appliance's
- * name/icon/default threshold from that type, leaving entity/active_entity/
- * target_entity for the user to fill in via that row's own entity pickers.
+ * Built from Home Assistant's own native form elements
+ * (`ha-entity-picker`, `ha-select`, `ha-textfield`, `ha-expansion-panel`,
+ * `ha-icon-button`) so the editor looks and behaves like a stock HA card
+ * editor rather than a raw HTML form — inspired by
+ * github.com/ADNPolymerase/ha-appliance-card's editor UI (adopted for
+ * look-and-feel only; this card keeps its own multi-appliance-per-card
+ * config model, not that project's one-appliance-per-card design).
  *
- * Entity fields use `<ha-entity-picker>` — a Home Assistant frontend custom
- * element, resolved by tag name at runtime (no import: it's already
- * registered globally by the HA frontend the same way `<ha-icon>` is, per
- * plan.md's distinction between that and a bundled npm dependency like
- * `lit`). It is undefined outside a real Home Assistant page (e.g. in this
- * project's own component tests), where it behaves as a plain element that
- * still accepts the `.hass`/`.value` property bindings and still dispatches
- * whatever `value-changed` event tests fire at it by hand.
+ * All of these are Home Assistant frontend custom elements, resolved by tag
+ * name at runtime (no import — registered globally by the HA frontend the
+ * same way `<ha-icon>` is, per plan.md's distinction between that and a
+ * bundled npm dependency like `lit`). They are undefined outside a real
+ * Home Assistant page (e.g. in this project's own component tests), where
+ * each still accepts its property bindings and still dispatches whatever
+ * event tests fire at it by hand.
  */
 export class HaSimpleApplianceCardEditor extends LitElement {
   static override styles = editorStyles;
@@ -138,116 +143,113 @@ export class HaSimpleApplianceCardEditor extends LitElement {
     `;
   }
 
+  private _textField(
+    label: string,
+    dataField: string,
+    value: string,
+    onChange: (value: string) => void,
+    type: 'text' | 'number' = 'text',
+  ): TemplateResult {
+    return html`
+      <ha-textfield
+        data-field=${dataField}
+        type=${type}
+        .label=${label}
+        .value=${value}
+        @input=${(e: Event) => onChange((e.target as unknown as ValueTarget).value)}
+      ></ha-textfield>
+    `;
+  }
+
   private _renderAddAppliance(): TemplateResult {
     return html`
       <div class="add-appliance-row">
-        <label class="field">
-          Type
-          <select
-            data-field="new-appliance-type"
-            .value=${this._newApplianceType}
-            @change=${(e: Event) => {
-              this._newApplianceType = (e.target as HTMLSelectElement).value;
-            }}
-          >
-            ${APPLIANCE_TYPE_OPTIONS.map(
-              (opt) => html`<option value=${opt.id}>${opt.label}</option>`,
-            )}
-          </select>
-        </label>
+        <ha-select
+          data-field="new-appliance-type"
+          label="Type"
+          .value=${this._newApplianceType}
+          @selected=${(e: Event) => {
+            this._newApplianceType = (e.target as unknown as ValueTarget).value;
+          }}
+          @closed=${(e: Event) => e.stopPropagation()}
+        >
+          ${APPLIANCE_TYPE_OPTIONS.map(
+            (opt) => html`<mwc-list-item .value=${opt.id}>${opt.label}</mwc-list-item>`,
+          )}
+        </ha-select>
         <button class="add-appliance" type="button" @click=${() => this._addAppliance()}>
-          + Add appliance
+          <ha-icon icon="mdi:plus"></ha-icon>
+          Add appliance
         </button>
       </div>
     `;
   }
 
+  private _rowHeader(appliance: Appliance): string {
+    return appliance.name || appliance.entity || 'New appliance';
+  }
+
   private _renderRow(appliance: Appliance, index: number): TemplateResult {
     return html`
-      <div class="appliance-row">
-        <div class="pickers">
-          ${this._entityPicker('Entity', 'entity', appliance.entity, (v) =>
-            this._updateField(index, 'entity', v),
-          )}
-          ${this._entityPicker(
-            'Active entity (optional)',
-            'active_entity',
-            appliance.active_entity ?? '',
-            (v) => this._updateField(index, 'active_entity', v),
-          )}
-          ${this._entityPicker(
-            'Target entity (optional)',
-            'target_entity',
-            appliance.target_entity ?? '',
-            (v) => this._updateField(index, 'target_entity', v),
-          )}
-        </div>
-        <div class="fields">
-          <div class="field">
-            <label>
-              Name override
-              <input
-                data-field="name"
-                placeholder="entity's own name"
-                .value=${appliance.name ?? ''}
-                @change=${(e: Event) =>
-                  this._updateField(index, 'name', (e.target as HTMLInputElement).value)}
-              />
-            </label>
+      <ha-expansion-panel outlined .header=${this._rowHeader(appliance)}>
+        <div class="appliance-row">
+          <div class="pickers">
+            ${this._entityPicker('Entity', 'entity', appliance.entity, (v) =>
+              this._updateField(index, 'entity', v),
+            )}
+            ${this._entityPicker(
+              'Active entity (optional)',
+              'active_entity',
+              appliance.active_entity ?? '',
+              (v) => this._updateField(index, 'active_entity', v),
+            )}
+            ${this._entityPicker(
+              'Target entity (optional)',
+              'target_entity',
+              appliance.target_entity ?? '',
+              (v) => this._updateField(index, 'target_entity', v),
+            )}
           </div>
-          <div class="field">
-            <label>
-              Icon override
-              <input
-                data-field="icon"
-                placeholder="mdi:..."
-                .value=${appliance.icon ?? ''}
-                @change=${(e: Event) =>
-                  this._updateField(index, 'icon', (e.target as HTMLInputElement).value)}
-              />
-            </label>
+          <div class="fields">
+            ${this._textField('Name override', 'name', appliance.name ?? '', (v) =>
+              this._updateField(index, 'name', v),
+            )}
+            ${this._textField('Icon override (mdi:...)', 'icon', appliance.icon ?? '', (v) =>
+              this._updateField(index, 'icon', v),
+            )}
+            ${this._textField(
+              'Active threshold',
+              'active_threshold',
+              appliance.active_threshold?.toString() ?? '',
+              (v) => this._updateField(index, 'active_threshold', v),
+              'number',
+            )}
           </div>
-          <div class="field">
-            <label>
-              Active threshold
-              <input
-                data-field="active_threshold"
-                type="number"
-                placeholder="0"
-                .value=${appliance.active_threshold?.toString() ?? ''}
-                @change=${(e: Event) =>
-                  this._updateField(index, 'active_threshold', (e.target as HTMLInputElement).value)}
-              />
-            </label>
+          <div class="row-actions">
+            <ha-icon-button
+              class="move-up"
+              .label=${'Move appliance up'}
+              @click=${() => this._moveAppliance(index, -1)}
+            >
+              <ha-icon icon="mdi:arrow-up"></ha-icon>
+            </ha-icon-button>
+            <ha-icon-button
+              class="move-down"
+              .label=${'Move appliance down'}
+              @click=${() => this._moveAppliance(index, 1)}
+            >
+              <ha-icon icon="mdi:arrow-down"></ha-icon>
+            </ha-icon-button>
+            <ha-icon-button
+              class="remove-appliance"
+              .label=${'Remove appliance'}
+              @click=${() => this._removeAppliance(index)}
+            >
+              <ha-icon icon="mdi:delete"></ha-icon>
+            </ha-icon-button>
           </div>
         </div>
-        <div class="row-actions">
-          <button
-            class="move-up"
-            type="button"
-            aria-label="Move appliance up"
-            @click=${() => this._moveAppliance(index, -1)}
-          >
-            ↑
-          </button>
-          <button
-            class="move-down"
-            type="button"
-            aria-label="Move appliance down"
-            @click=${() => this._moveAppliance(index, 1)}
-          >
-            ↓
-          </button>
-          <button
-            class="remove-appliance"
-            type="button"
-            aria-label="Remove appliance"
-            @click=${() => this._removeAppliance(index)}
-          >
-            ✕
-          </button>
-        </div>
-      </div>
+      </ha-expansion-panel>
     `;
   }
 

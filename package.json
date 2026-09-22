@@ -1,6 +1,6 @@
 {
   "name": "ha-simple-appliance-card",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A configurable Home Assistant Lovelace card for displaying appliances as icons.",
   "type": "module",
   "private": true,
