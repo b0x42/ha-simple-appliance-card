@@ -63,7 +63,7 @@ and research.md §§1-4, 7.
 **Purpose**: Shared types, config validation, and state-derivation logic every
 user story depends on. **MUST complete before any user-story phase.**
 
-- [ ] T008 [P] Write unit tests for config validation in
+- [X] T008 [P] Write unit tests for config validation in
       `tests/unit/config.test.ts`: reject a config missing `entity` ("`entity`
       MUST be present and a non-empty string; `setConfig` throws a descriptive
       error otherwise"), reject wrong-typed `target_entity`/`name`/`icon`/
@@ -72,28 +72,28 @@ user story depends on. **MUST complete before any user-story phase.**
       an absent/empty `appliances` array as valid — per data-model.md
       `Appliance`/`CardConfig` validation rules. Tests MUST fail (no
       implementation yet).
-- [ ] T009 Define shared types in `src/types.ts`: `Appliance`, `AppliancePreset`,
+- [X] T009 Define shared types in `src/types.ts`: `Appliance`, `AppliancePreset`,
       `CardConfig`, `DerivedState` exactly matching the field tables in
       data-model.md (`Appliance`: `entity: string` required, `target_entity?`,
       `name?`, `icon?`, `active_threshold?: number` default `0`; `CardConfig`:
       `type`, `appliances: Appliance[]` default `[]`, `title?`)
-- [ ] T010 Implement `src/config.ts` `setConfig` validation/normalization
+- [X] T010 Implement `src/config.ts` `setConfig` validation/normalization
       satisfying T008: throw when `appliances` is present but not an array;
       throw when any entry is missing `entity` or has a wrong-typed optional
       field; treat an absent/empty `appliances` array as valid (depends on
       T009)
-- [ ] T011 [P] Write unit tests for state derivation in `tests/unit/state.test.ts`:
+- [X] T011 [P] Write unit tests for state derivation in `tests/unit/state.test.ts`:
       numeric primary entity value `> active_threshold` (default `0`) →
       `'active'`; `<= active_threshold` → `'inactive'`; primary entity
       `unavailable`/`unknown` → `'unavailable'`; non-numeric entity falls back
       to `state !== 'off'` — per research.md §5. Tests MUST fail (no
       implementation yet).
-- [ ] T012 Implement `src/state.ts` active/inactive/unavailable derivation
+- [X] T012 Implement `src/state.ts` active/inactive/unavailable derivation
       satisfying T011, reading the primary entity from `hass.states`; treat an
       `entity`/`target_entity` absent from `hass.states` identically to state
       `unavailable`/`unknown` (no separate "not found" case), per
       data-model.md's derived-value table (depends on T009)
-- [ ] T013 [P] Create `src/styles.ts`: shared CSS using only Home Assistant
+- [X] T013 [P] Create `src/styles.ts`: shared CSS using only Home Assistant
       theme custom properties (`--primary-color`, `--card-background-color`,
       etc.), no hard-coded colors outside theme-overridable semantic
       status colors, per constitution Principle IV

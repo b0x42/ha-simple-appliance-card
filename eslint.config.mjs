@@ -21,5 +21,13 @@ export default tseslint.config(
       '@typescript-eslint/explicit-function-return-type': 'off',
     },
   },
+  {
+    // @open-wc/testing's chai typings make `expect(...).to...` read as
+    // thenable to this rule; it is not an async assertion library here.
+    files: ['tests/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'off',
+    },
+  },
   eslintConfigPrettier,
 );
