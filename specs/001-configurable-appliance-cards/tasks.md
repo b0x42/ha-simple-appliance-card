@@ -196,7 +196,7 @@ defaults.
 
 ### Tests for User Story 2
 
-- [ ] T023 [P] [US2] Write unit tests in `tests/unit/presets.test.ts`: the
+- [X] T023 [P] [US2] Write unit tests in `tests/unit/presets.test.ts`: the
       4 fixed preset slots (`circulation_pump`, `gas_burner` primary-only,
       numeric-threshold mode; `hot_water`, `heating_circuit`
       primary+active_entity+target) each produce an `Appliance` using the
@@ -204,7 +204,7 @@ defaults.
       required entity ID(s) are supplied (one for the primary-only slots;
       primary + active + target for the other two), per data-model.md
       `AppliancePreset`. Tests MUST fail (no implementation yet).
-- [ ] T024 [P] [US2] Write component tests in `tests/component/editor.test.ts`:
+- [X] T024 [P] [US2] Write component tests in `tests/component/editor.test.ts`:
       applying the heating preset with each slot's required entity ID(s)
       produces 4 appliances with preset defaults (Acceptance Scenario 2.1);
       overriding one slot's name/icon leaves the other 3 on preset defaults
@@ -212,13 +212,13 @@ defaults.
 
 ### Implementation for User Story 2
 
-- [ ] T025 [US2] Implement the 4 built-in preset definitions in
+- [X] T025 [US2] Implement the 4 built-in preset definitions in
       `src/presets.ts` per data-model.md `AppliancePreset` table (depends on
       T009)
-- [ ] T026 [US2] Implement preset-application logic (per-slot entity ID(s) →
+- [X] T026 [US2] Implement preset-application logic (per-slot entity ID(s) →
       `Appliance[]` using preset defaults) in `src/presets.ts`, satisfying
       T023 (depends on T025)
-- [ ] T027 [US2] Add an "Apply built-in heating preset" action to the editor
+- [X] T027 [US2] Add an "Apply built-in heating preset" action to the editor
       (entity-ID inputs per slot's roles → calls preset-application, emits
       `config-changed`) in `src/editor.ts`, satisfying T024 (depends on T020,
       T026)
