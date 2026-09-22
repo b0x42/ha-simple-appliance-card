@@ -248,12 +248,15 @@ is unavailable.
       tapping an appliance dispatches `hass-more-info` with
       `detail.entityId` equal to the appliance's primary entity (Acceptance
       Scenario 3.1), including when that entity is unavailable (3.2), per
-      `contracts/lifecycle-events.md`. **Process deviation, noted for
-      transparency**: the tap handler (T030/T031) was implemented early as
-      part of T017 before this test existed, so this ran green rather than
-      red-then-green — the constitution's test-first intent was not honored
-      for this one task; recorded here rather than silently left as if it
-      had been.
+      `contracts/lifecycle-events.md`. **Process note**: the tap handler
+      (T030/T031) was implemented early as part of T017 before this test
+      existed, so it did not get a chronological red-then-green. Fixed by
+      retroactively verifying it: temporarily disabled `_handleTap` in
+      `src/ha-simple-appliance-card.ts`, confirmed all 3 tests here fail
+      (`Timeout of 5000ms exceeded` waiting on `hass-more-info` — genuine
+      red), then restored the handler and confirmed all 54 tests pass again
+      (green). The tests are proven to actually exercise the behavior they
+      claim to, closing the gap the original note flagged.
 
 ### Implementation for User Story 3
 
