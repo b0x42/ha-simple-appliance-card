@@ -142,9 +142,31 @@ export const editorStyles = css`
     border: 1px dashed var(--divider-color, #e0e0e0);
   }
 
-  .add-appliance-row ha-select {
+  .add-appliance-row .type-field {
     flex: 1;
     max-width: 260px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.85em;
+    color: var(--secondary-text-color, #727272);
+  }
+
+  .add-appliance-row select {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 8px;
+    font-size: 1em;
+    font-family: inherit;
+    color: var(--primary-text-color, #000);
+    background: var(--card-background-color, #fff);
+    border: 1px solid var(--divider-color, #e0e0e0);
+    border-radius: 4px;
+  }
+
+  .add-appliance-row select:focus-visible {
+    outline: 2px solid var(--primary-color, #03a9f4);
+    outline-offset: -1px;
   }
 
   .add-appliance {
