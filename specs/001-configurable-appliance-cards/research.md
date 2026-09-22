@@ -92,26 +92,65 @@ verification story. Vitest remains a fine choice for pure-logic unit tests in
 isolation, but using one runner for both keeps the test setup and coverage
 report unified.
 
-## 5. State-active threshold model
+## 5. State-active model
 
-**Decision**: An appliance's active/inactive indicator is computed from its
-primary entity's value: numeric entities (`sensor`, `number`) are active when
-`Number(state) > threshold` (default `threshold = 0`, overridable per appliance);
-non-numeric entities fall back to their base HA `state !== 'off'` (and
-`!== 'unavailable'`/`'unknown'`, which map to the distinct unavailable indicator
-per spec FR-002).
+**Decision**: An appliance's active/inactive indicator uses one of two modes:
 
-**Rationale**: Confirmed against the real reference Home Assistant heating
-dashboard during `/speckit-clarify`: all 4 source icons key off numeric sensor
-values (burner power, pump modulation %), not a switch/climate on-off state, so
-a pure domain-based on/off check would misrepresent every preset appliance.
+- **Separate active entity** (`active_entity` configured): active iff that
+  entity's state is `on`; unavailable iff it is unavailable/unknown/missing.
+  The primary entity's own value is not consulted at all for this indicator.
+- **No active entity** (fallback): numeric entities (`sensor`, `number`) are
+  active when `Number(state) > threshold` (default `threshold = 0`,
+  overridable per appliance); non-numeric entities fall back to their base HA
+  `state !== 'off'`.
+
+Either mode maps unavailable/unknown/missing on its driving entity to the
+distinct unavailable indicator per spec FR-002.
+
+**Correction (recorded during `/speckit-implement`, superseding this
+section's original single-mode decision)**: the original decision — pure
+numeric-threshold-on-primary for all 4 preset appliances — was itself an
+incomplete read of the reference dashboard, caught only after implementing it:
+`/speckit-clarify`'s dashboard-config inspection showed *which* entities each
+icon reads, but not which one actually *drives* the active state. The
+dashboard's own design-system documentation
+(kb.internal/heating-dashboard-icons.html, found mid-implementation) makes
+this explicit: Hot Water and Heating Circuit drive their icon from a separate
+boolean (`binary_sensor.boiler_dhw_charging`,
+`binary_sensor.boiler_heatingactive`) that is **not** the temperature value
+displayed — a numeric threshold on the displayed value would have been wrong
+for half the preset. Circulation Pump and Gas Burner are unaffected: their
+driving and displayed entity are the same numeric sensor, so the original
+threshold model still applies to them via the fallback mode above.
 
 **Alternatives considered**: Domain-specific logic per entity domain (e.g. read
 `hvac_action` for `climate`, `state` for `switch`) — rejected as the general
 rule; adds a growing per-domain special-case table for marginal benefit, since
-the numeric-threshold rule already correctly covers every entity type the
-built-in preset targets, and any domain can still be pointed at manually with an
-appropriate threshold.
+the two-mode rule above already correctly covers every entity type the
+built-in preset targets, and any domain can still be pointed at manually with
+an appropriate threshold or a manually-specified `active_entity`.
+
+## 5a. Target display collapse rule
+
+**Decision**: When an appliance has a `target_entity`, its value is shown
+alongside the primary value only while the appliance is active **and** the
+two values (rounded, for numeric values) differ; otherwise only the primary
+value renders. A `target_entity` that is itself unavailable is always
+surfaced as "target: unavailable," independent of this rule.
+
+**Rationale**: kb.internal/heating-dashboard-icons.html documents this
+explicitly as the "current/target-with-collapse pattern" for both Hot Water
+and Heating Circuit: "shown as current/target only while \[active\] and the
+two (rounded) values differ; otherwise just current." Always showing the
+target (this feature's original, simpler behavior) would clutter the card
+with a redundant "target: 45°C" next to "45.1°C" whenever the setpoint has
+already been reached — exactly the noise the reference dashboard's own design
+deliberately avoids.
+
+**Alternatives considered**: Always show target when configured (original
+decision, since replaced) — rejected once the reference dashboard's actual
+behavior was found; it reads as more cluttered and less faithful to the
+feature the built-in preset explicitly promises to match (spec FR-005).
 
 ## 6. Tap interaction
 

@@ -12,11 +12,12 @@ type: custom:ha-simple-appliance-card
 title: Heating            # optional
 appliances:
   - entity: sensor.boiler_heatingpumpmod
-    name: Heat Pump         # optional, overrides entity friendly_name
-    icon: mdi:heat-pump      # optional, overrides entity icon
-    active_threshold: 0       # optional, default 0
+    name: Circulation Pump     # optional, overrides entity friendly_name
+    icon: mdi:pump               # optional, overrides entity icon
+    active_threshold: 0            # optional, default 0; ignored if active_entity is set
   - entity: sensor.boiler_dhw_curtemp
-    target_entity: number.boiler_dhw_seltemp   # optional
+    active_entity: binary_sensor.boiler_dhw_charging   # optional; decouples active state from entity's own value
+    target_entity: number.boiler_dhw_seltemp             # optional
     name: Hot Water
 ```
 
@@ -34,7 +35,10 @@ The editor's preset action expands to 4 `Appliance` entries using the preset's
 defaults (see `data-model.md` > AppliancePreset), so the *stored* config a user
 ends up with is always plain `appliances` entries — there is no separate
 `preset:` key persisted in the config. This keeps the config contract to one
-shape regardless of how it was authored (spec FR-006, SC-002).
+shape regardless of how it was authored (spec FR-006, SC-002). Two of the four
+slots (Hot Water, Heating Circuit) produce an appliance with `active_entity`
+and `target_entity` both set; the other two (Circulation Pump, Gas Burner)
+produce a primary-only appliance.
 
 ## Errors
 
@@ -44,8 +48,8 @@ gracefully" requirement) when:
 
 - `appliances` is present but not an array.
 - Any entry in `appliances` is missing `entity`, or has a non-string `entity`.
-- Any entry's `target_entity`, `name`, `icon`, or `active_threshold` is present
-  but the wrong type.
+- Any entry's `active_entity`, `target_entity`, `name`, `icon`, or
+  `active_threshold` is present but the wrong type.
 
 An empty or absent `appliances` array is **not** an error — it is the documented
 empty state (spec Edge Cases).

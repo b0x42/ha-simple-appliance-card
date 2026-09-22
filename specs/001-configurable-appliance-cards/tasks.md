@@ -74,25 +74,30 @@ user story depends on. **MUST complete before any user-story phase.**
       implementation yet).
 - [X] T009 Define shared types in `src/types.ts`: `Appliance`, `AppliancePreset`,
       `CardConfig`, `DerivedState` exactly matching the field tables in
-      data-model.md (`Appliance`: `entity: string` required, `target_entity?`,
-      `name?`, `icon?`, `active_threshold?: number` default `0`; `CardConfig`:
-      `type`, `appliances: Appliance[]` default `[]`, `title?`)
+      data-model.md (`Appliance`: `entity: string` required, `active_entity?`,
+      `target_entity?`, `name?`, `icon?`, `active_threshold?: number` default
+      `0`; `CardConfig`: `type`, `appliances: Appliance[]` default `[]`,
+      `title?`) — `active_entity` added during `/speckit-implement` per
+      research.md §5's correction (kb.internal/heating-dashboard-icons.html)
 - [X] T010 Implement `src/config.ts` `setConfig` validation/normalization
       satisfying T008: throw when `appliances` is present but not an array;
       throw when any entry is missing `entity` or has a wrong-typed optional
       field; treat an absent/empty `appliances` array as valid (depends on
       T009)
 - [X] T011 [P] Write unit tests for state derivation in `tests/unit/state.test.ts`:
-      numeric primary entity value `> active_threshold` (default `0`) →
-      `'active'`; `<= active_threshold` → `'inactive'`; primary entity
-      `unavailable`/`unknown` → `'unavailable'`; non-numeric entity falls back
-      to `state !== 'off'` — per research.md §5. Tests MUST fail (no
-      implementation yet).
-- [X] T012 Implement `src/state.ts` active/inactive/unavailable derivation
-      satisfying T011, reading the primary entity from `hass.states`; treat an
-      `entity`/`target_entity` absent from `hass.states` identically to state
-      `unavailable`/`unknown` (no separate "not found" case), per
-      data-model.md's derived-value table (depends on T009)
+      both active-state modes from research.md §5 (separate boolean
+      `active_entity` → `is_state(x,'on')`; fallback numeric primary value
+      `> active_threshold` default `0`, or non-numeric `state !== 'off'`),
+      `unavailable`/`unknown`/missing → `'unavailable'` in both modes, and the
+      target-display collapse rule (research.md §5a) via `deriveTargetDisplay`.
+      Tests MUST fail (no implementation yet). Reworked during
+      `/speckit-implement` per the kb.internal correction (see research.md §5).
+- [X] T012 Implement `src/state.ts` `deriveActiveState` (both modes from
+      research.md §5) and `deriveTargetDisplay` (collapse rule, research.md
+      §5a) satisfying T011, reading entities from `hass.states`; treat any
+      `entity`/`active_entity`/`target_entity` absent from `hass.states`
+      identically to state `unavailable`/`unknown` (no separate "not found"
+      case), per data-model.md's derived-value table (depends on T009)
 - [X] T013 [P] Create `src/styles.ts`: shared CSS using only Home Assistant
       theme custom properties (`--primary-color`, `--card-background-color`,
       etc.), no hard-coded colors outside theme-overridable semantic
@@ -114,42 +119,63 @@ override is honored.
 
 ### Tests for User Story 1
 
-- [ ] T014 [P] [US1] Write component tests in `tests/component/card.test.ts`:
+- [X] T014 [P] [US1] Write component tests in `tests/component/card.test.ts`:
       one configured appliance renders one icon reflecting its entity's
       current state (Acceptance Scenario 1.1); a live `hass` state change
       updates the rendered icon without re-adding the element, asserting the
       updated icon is visible within 2 seconds of the state change per spec
       SC-004 (1.2); a configured `name`/`icon` override is shown instead of
-      the entity's own (1.3). Tests MUST fail (no implementation yet).
-- [ ] T015 [P] [US1] Write component tests in `tests/component/editor.test.ts`:
+      the entity's own (1.3). Tests MUST fail (no implementation yet). Later
+      extended with the target-display collapse rule (FR-003a) during the
+      kb.internal rework — see research.md §5a.
+- [X] T015 [P] [US1] Write component tests in `tests/component/editor.test.ts`:
       adding, editing, removing, and reordering an appliance row each produce
       a correctly-shaped `config-changed` event per
       `contracts/lifecycle-events.md`. Tests MUST fail (no implementation yet).
 
 ### Implementation for User Story 1
 
-- [ ] T016 [US1] Implement the `ha-simple-appliance-card` custom element
+- [X] T016 [US1] Implement the `ha-simple-appliance-card` custom element
       skeleton in `src/ha-simple-appliance-card.ts`: `setConfig()` delegating
       to `src/config.ts` (T010), `hass` setter, `getCardSize()` (depends on
-      T010)
-- [ ] T017 [US1] Implement appliance icon rendering with the
+      T010). Implemented without Lit decorators (`static properties` +
+      `declare` fields + explicit `customElements.define`) — the esbuild
+      transform used by `@web/test-runner` didn't reliably honor
+      `tsconfig.json`'s legacy-decorator settings; this sidesteps that
+      toolchain fragility entirely rather than fighting the transform config.
+- [X] T017 [US1] Implement appliance icon rendering with the
       active/inactive/unavailable indicator from `src/state.ts` in
       `src/ha-simple-appliance-card.ts`, satisfying T014 (depends on T012,
-      T013, T016)
-- [ ] T018 [US1] Implement per-appliance name/icon override fallback (configured
+      T013, T016). Also includes the current-vs-target rendering originally
+      scoped to T028 (built together since both live in the same render
+      method; reworked in place for the collapse rule during the kb.internal
+      correction) and the tap/keyboard handling originally scoped to
+      T030/T031 (same reasoning).
+- [X] T018 [US1] Implement per-appliance name/icon override fallback (configured
       value, else the entity's own `friendly_name`/`icon`) in
       `src/ha-simple-appliance-card.ts` per FR-004 (depends on T017)
-- [ ] T019 [US1] Guard the `hass` setter with `hasConfigOrEntityChanged` so
-      re-renders only happen on relevant state changes, in
-      `src/ha-simple-appliance-card.ts` (depends on T016)
-- [ ] T020 [US1] Implement the `ha-simple-appliance-card-editor` custom
+- [X] T019 [US1] Guard re-renders to only happen on relevant entity state
+      changes, in `src/ha-simple-appliance-card.ts` (depends on T016).
+      Implemented as a Lit `shouldUpdate()` override comparing each
+      appliance's relevant entity IDs (`entity`, `active_entity`,
+      `target_entity`) between old/new `hass`, rather than importing
+      `custom-card-helpers`' `hasConfigOrEntityChanged` — that helper assumes
+      a single `config.entity`, which doesn't fit this card's
+      multiple-appliances-per-instance config shape; the local `shouldUpdate`
+      generalizes the same technique (entity-state-reference comparison) to a
+      list.
+- [X] T020 [US1] Implement the `ha-simple-appliance-card-editor` custom
       element base in `src/editor.ts`: entity picker, name/icon override
       fields, add/remove/reorder appliance rows, dispatching `config-changed`
-      per `contracts/lifecycle-events.md`, satisfying T015 (depends on T010)
-- [ ] T021 [US1] Implement static `getConfigElement()`/`getStubConfig()` on the
+      per `contracts/lifecycle-events.md`, satisfying T015 (depends on T010).
+      Entity/target "picker" fields are plain text inputs (not
+      `ha-entity-picker`) — kept dependency-free and fully testable outside a
+      live Home Assistant instance; still satisfies FR-010's "picking an
+      entity... through the Lovelace UI."
+- [X] T021 [US1] Implement static `getConfigElement()`/`getStubConfig()` on the
       card, wiring to the editor, in `src/ha-simple-appliance-card.ts` per
       FR-009/FR-010 (depends on T016, T020)
-- [ ] T022 [US1] Register both custom elements and the `window.customCards`
+- [X] T022 [US1] Register both custom elements and the `window.customCards`
       entry in `src/index.ts` per `contracts/lifecycle-events.md`'s
       Registration contract (depends on T016, T020)
 
@@ -171,32 +197,37 @@ defaults.
 ### Tests for User Story 2
 
 - [ ] T023 [P] [US2] Write unit tests in `tests/unit/presets.test.ts`: the
-      4 fixed preset slots (`heat_pump`, `gas_boiler` primary-only;
-      `hot_water`, `heating_circuit` primary+target) each produce an
-      `Appliance` using the preset's `name`/`icon`/`default_active_threshold`
-      when only an `entity` (and, for the two target-bearing slots,
-      `target_entity`) is supplied, per data-model.md `AppliancePreset`. Tests
-      MUST fail (no implementation yet).
+      4 fixed preset slots (`circulation_pump`, `gas_burner` primary-only,
+      numeric-threshold mode; `hot_water`, `heating_circuit`
+      primary+active_entity+target) each produce an `Appliance` using the
+      preset's `name`/`icon`/`default_active_threshold` when the slot's
+      required entity ID(s) are supplied (one for the primary-only slots;
+      primary + active + target for the other two), per data-model.md
+      `AppliancePreset`. Tests MUST fail (no implementation yet).
 - [ ] T024 [P] [US2] Write component tests in `tests/component/editor.test.ts`:
-      applying the heating preset with 4 entity IDs produces 4 appliances with
-      preset defaults (Acceptance Scenario 2.1); overriding one slot's name/icon
-      leaves the other 3 on preset defaults (2.2). Tests MUST fail (no preset
-      action implemented yet).
+      applying the heating preset with each slot's required entity ID(s)
+      produces 4 appliances with preset defaults (Acceptance Scenario 2.1);
+      overriding one slot's name/icon leaves the other 3 on preset defaults
+      (2.2). Tests MUST fail (no preset action implemented yet).
 
 ### Implementation for User Story 2
 
 - [ ] T025 [US2] Implement the 4 built-in preset definitions in
       `src/presets.ts` per data-model.md `AppliancePreset` table (depends on
       T009)
-- [ ] T026 [US2] Implement preset-application logic (entity IDs → `Appliance[]`
-      using preset defaults) in `src/presets.ts`, satisfying T023 (depends on
-      T025)
+- [ ] T026 [US2] Implement preset-application logic (per-slot entity ID(s) →
+      `Appliance[]` using preset defaults) in `src/presets.ts`, satisfying
+      T023 (depends on T025)
 - [ ] T027 [US2] Add an "Apply built-in heating preset" action to the editor
-      (4 entity-ID inputs → calls preset-application, emits `config-changed`)
-      in `src/editor.ts`, satisfying T024 (depends on T020, T026)
-- [ ] T028 [US2] Implement current-vs-target rendering for appliances with a
-      `target_entity` (Hot Water, Heating Circuit) in
-      `src/ha-simple-appliance-card.ts` per FR-003a (depends on T017)
+      (entity-ID inputs per slot's roles → calls preset-application, emits
+      `config-changed`) in `src/editor.ts`, satisfying T024 (depends on T020,
+      T026)
+- [x] T028 [US2] ~~Implement current-vs-target rendering for appliances with a
+      `target_entity`~~ — **done early as part of T017** (both live in the
+      same `_renderAppliance` method); reworked in place for the collapse
+      rule (research.md §5a) during the kb.internal correction, with its own
+      tests in `tests/component/card.test.ts` and `tests/unit/state.test.ts`.
+      No separate work remains for this task.
 
 **Checkpoint**: User Stories 1 and 2 both independently functional.
 
@@ -213,21 +244,27 @@ is unavailable.
 
 ### Tests for User Story 3
 
-- [ ] T029 [P] [US3] Write component tests in `tests/component/card.test.ts`:
+- [x] T029 [P] [US3] Write component tests in `tests/component/card.test.ts`:
       tapping an appliance dispatches `hass-more-info` with
       `detail.entityId` equal to the appliance's primary entity (Acceptance
       Scenario 3.1), including when that entity is unavailable (3.2), per
-      `contracts/lifecycle-events.md`. Tests MUST fail (no handler yet).
+      `contracts/lifecycle-events.md`. **Process deviation, noted for
+      transparency**: the tap handler (T030/T031) was implemented early as
+      part of T017 before this test existed, so this ran green rather than
+      red-then-green — the constitution's test-first intent was not honored
+      for this one task; recorded here rather than silently left as if it
+      had been.
 
 ### Implementation for User Story 3
 
-- [ ] T030 [US3] Implement a tap/click handler on each appliance icon
+- [x] T030 [US3] Implement a tap/click handler on each appliance icon
       dispatching `hass-more-info` via `fireEvent(this, 'hass-more-info',
-      { entityId })` in `src/ha-simple-appliance-card.ts`, satisfying T029
-      (depends on T017)
-- [ ] T031 [US3] Make each appliance icon a focusable, `Enter`/`Space`-
+      { entityId })` in `src/ha-simple-appliance-card.ts` — **done early as
+      part of T017** (depends on T017)
+- [x] T031 [US3] Make each appliance icon a focusable, `Enter`/`Space`-
       activatable element with an `aria-label` (entity's display name) in
-      `src/ha-simple-appliance-card.ts` per constitution Principle IV (depends
+      `src/ha-simple-appliance-card.ts` per constitution Principle IV — **done
+      early as part of T017** (depends
       on T030)
 
 **Checkpoint**: All 3 user stories independently functional.
@@ -253,15 +290,17 @@ is unavailable.
       install, add resource if needed), per FR-011 and spec Assumptions
       (HACS already installed)
 - [ ] T037 [P] Write `README.md` § Configuration Reference: a table of every
-      `Appliance` field (`entity`, `target_entity`, `name`, `icon`,
-      `active_threshold`) and every `CardConfig` field (`type`, `appliances`,
-      `title`) with type, required/optional, and default, taken verbatim from
-      data-model.md's field tables, per FR-011 (depends on T009 for final
-      field names)
+      `Appliance` field (`entity`, `active_entity`, `target_entity`, `name`,
+      `icon`, `active_threshold`) and every `CardConfig` field (`type`,
+      `appliances`, `title`) with type, required/optional, and default, taken
+      verbatim from data-model.md's field tables, per FR-011 (depends on T009
+      for final field names)
 - [ ] T038 [P] Write `README.md` § Examples: four worked YAML examples —
       minimal single-appliance, name/icon override, built-in heating preset
-      (4 slots), and an appliance with a `target_entity` — matching
-      `contracts/card-config.md`, per FR-011/SC-006
+      (4 slots, including a `hot_water`/`heating_circuit` slot showing
+      `active_entity` + `target_entity` together), and a standalone appliance
+      with a `target_entity` — matching `contracts/card-config.md`, per
+      FR-011/SC-006
 - [ ] T039 [P] Write `README.md` § Entities & Events: document every entity
       domain the card reads (`sensor`, `number`, and any domain a user points
       it at) and the one event it emits (`hass-more-info`); no services are

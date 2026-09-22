@@ -24,9 +24,17 @@ export default tseslint.config(
   {
     // @open-wc/testing's chai typings make `expect(...).to...` read as
     // thenable to this rule; it is not an async assertion library here.
+    // `no-unused-expressions` similarly misreads chai's dirty-chai style
+    // property-getter assertions (`.to.exist`) as no-ops — they have a
+    // real assertion side effect. `no-non-null-assertion` is relaxed here
+    // because test fixtures assert on DOM the test itself just rendered
+    // (e.g. `el.shadowRoot!.querySelector(...)`), a different risk profile
+    // than the same pattern in shipped src code.
     files: ['tests/**/*.ts'],
     rules: {
       '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/no-unused-expressions': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
     },
   },
   eslintConfigPrettier,

@@ -24,6 +24,27 @@
   current-vs-target (matching how the real dashboard's Warmwasser and Heizung
   icons show current + target temperature).
 
+### Session 2026-09-22 (during `/speckit-implement`, via kb.internal/heating-dashboard-icons.html)
+
+- Discovery: the reference dashboard's own design-system documentation, found
+  mid-implementation, revealed two facts the original clarification session
+  above got wrong because the live dashboard config alone didn't show them:
+  1. "Heat Pump" and "Gas Boiler" are not two separate physical units — both
+     are sensor readouts (circulation-pump modulation %, gas-burner power %)
+     on *one* physical gas boiler. Kept as two preset slots (they're two
+     independently useful status icons), but renamed to avoid implying
+     separate equipment: **Circulation Pump** and **Gas Burner**.
+  2. Hot Water and Heating Circuit do **not** use a numeric threshold on the
+     displayed value to decide "active." Each has its own separate boolean
+     entity (`binary_sensor.boiler_dhw_charging`,
+     `binary_sensor.boiler_heatingactive`) that drives the active/inactive
+     indicator, decoupled from the temperature value shown. Their
+     current/target display also only appears while active *and* the two
+     values (rounded) differ — otherwise only the current value is shown.
+  This changes FR-001, FR-002, FR-003a, and FR-005 below (previously
+  clarified as a single "numeric-threshold-on-primary, always-show-target"
+  model) and required rework of already-implemented state-derivation logic.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Configure a custom set of appliances (Priority: P1)
@@ -65,14 +86,15 @@ they get a working card without designing a configuration from scratch.
 card targets, but the card is already useful via User Story 1 without it.
 
 **Independent Test**: Can be fully tested by configuring the card with the preset
-option and 4 entity IDs only (no names/icons) and confirming all 4 render with the
-preset's default names and icons.
+option and each slot's required entity IDs only (no names/icons) and confirming
+all 4 render with the preset's default names and icons.
 
 **Acceptance Scenarios**:
 
 1. **Given** the built-in heating preset is selected, **When** the user supplies
-   only an entity ID for each of the 4 preset slots, **Then** each appliance
-   renders with the preset's default name and icon.
+   only the entity ID(s) each preset slot requires (one for Circulation Pump/Gas
+   Burner; primary, active, and target entity IDs for Hot Water/Heating Circuit),
+   **Then** each appliance renders with the preset's default name and icon.
 2. **Given** the built-in heating preset is selected, **When** the user overrides
    the name or icon for one preset slot, **Then** that slot uses the override and
    the remaining slots keep the preset defaults.
@@ -128,26 +150,39 @@ underlying entity.
 
 - **FR-001**: Card MUST let a user configure an ordered list of appliances on
   their Lovelace dashboard, each backed by one required primary Home Assistant
-  entity ID and one optional target/setpoint entity ID.
+  entity ID (the displayed value), one optional separate "active" entity ID
+  driving the active/inactive indicator, and one optional target/setpoint
+  entity ID.
 - **FR-002**: Card MUST render each configured appliance as an icon with a visual
-  indicator of that appliance's active state: active when the primary entity's
-  numeric value is above a configurable threshold (default greater than 0),
-  inactive at or below the threshold, and a distinct unavailable indicator when
-  the primary entity is unavailable or unknown. Non-numeric entities MUST fall
-  back to their base on/off state for this indicator.
+  indicator of that appliance's active state, using one of two modes:
+  - When an active entity is configured: active when that entity's state is
+    `on`, inactive otherwise, unavailable when that entity is unavailable/
+    unknown/missing — independent of the primary entity's own value.
+  - When no active entity is configured: active when the primary entity's
+    numeric value is above a configurable threshold (default greater than 0),
+    inactive at or below the threshold, non-numeric entities falling back to
+    their base on/off state.
+  Either mode shows a distinct unavailable indicator when its driving entity
+  is unavailable, unknown, or missing.
 - **FR-003**: Card MUST update a rendered appliance's state indicator whenever the
   underlying entity's state changes in Home Assistant, without requiring a
   dashboard reload.
 - **FR-003a**: When an appliance has a target entity configured, the card MUST
-  display the target entity's current value alongside the primary entity's value
-  (current-vs-target), updating live as either changes.
+  display the target entity's value alongside the primary entity's value
+  (current-vs-target) only while the appliance is active AND the two values
+  (rounded) differ; otherwise it MUST show only the primary value. A target
+  entity that is itself unavailable MUST always be surfaced as such,
+  regardless of this collapse rule. All of this MUST update live as any of
+  the involved entities change.
 - **FR-004**: Card MUST allow a per-appliance override of display name and icon;
   when not overridden, the name and icon MUST fall back to the entity's own
   friendly name and icon.
 - **FR-005**: Card MUST ship with a built-in preset of 4 default appliances
   matching the icons shown on the reference Home Assistant heating dashboard:
-  **Heat Pump** (primary only), **Gas Boiler** (primary only), **Hot Water**
-  (primary + target), and **Heating Circuit** (primary + target).
+  **Circulation Pump** (primary only, numeric-threshold active mode),
+  **Gas Burner** (primary only, numeric-threshold active mode), **Hot Water**
+  (primary + target + separate active entity), and **Heating Circuit**
+  (primary + target + separate active entity).
 - **FR-006**: Card MUST let a user apply the built-in heating preset by supplying
   only entity IDs, without needing to specify names or icons for those 4 slots.
 - **FR-007**: Card MUST support tapping a configured appliance icon to open Home
@@ -173,11 +208,15 @@ underlying entity.
 ### Key Entities
 
 - **Appliance**: One configured item on the card — a required primary Home
-  Assistant entity ID, an optional target/setpoint entity ID, an optional
-  active-threshold override, and optional display-name and icon overrides.
+  Assistant entity ID, an optional separate "active" entity ID (drives the
+  active/inactive indicator independently of the primary value), an optional
+  target/setpoint entity ID, an optional active-threshold override (used only
+  when no active entity is configured), and optional display-name and icon
+  overrides.
 - **Appliance Preset**: A built-in, named default definition (icon + display name
-  + expected primary/target entity roles) that a user can apply to quickly fill
-  in the 4 heating-dashboard-based appliance slots by supplying only entity IDs.
+  + expected primary/active/target entity roles) that a user can apply to
+  quickly fill in the 4 heating-dashboard-based appliance slots by supplying
+  only entity IDs.
 - **Card Configuration**: The complete set of a user's choices for one instance of
   the card on a dashboard — the ordered list of Appliances plus any card-level
   display options.
@@ -190,8 +229,10 @@ underlying entity.
   correctly configured appliance's live state on their dashboard in under 10
   minutes, following only the project's README.
 - **SC-002**: A user applying the built-in heating preset can get all 4 default
-  appliances showing correct live state by writing 4 lines of YAML or fewer
-  (one per entity ID), with no other configuration required.
+  appliances showing correct live state by supplying only each slot's required
+  entity ID(s) — one each for Circulation Pump/Gas Burner, up to three
+  (primary/active/target) each for Hot Water/Heating Circuit — with no other
+  configuration required.
 - **SC-003**: An appliance's on/off/unavailable status is distinguishable at a
   glance (icon and/or color) without needing to tap into further detail, for 90%
   of users in informal usability review.
@@ -214,11 +255,15 @@ underlying entity.
   for this feature (per the user's stated boundary).
 - Appliance types outside heating are still configurable manually via User
   Story 1 but are not given their own preset in this feature.
-- The 4 preset appliances (heat pump, gas boiler, hot water, heating circuit) are
-  typically backed by `sensor`/`number` entities reporting modulation, power, or
-  temperature rather than simple switch/climate on-off state; exact icon
-  identifiers and default thresholds per preset slot are a planning-phase detail,
-  not a specification concern.
+- The 4 preset appliances (circulation pump, gas burner, hot water, heating
+  circuit) are typically backed by `sensor`/`number`/`binary_sensor` entities
+  reporting modulation, power, temperature, or a charging/heating-active
+  boolean, rather than simple switch/climate on-off state; exact icon
+  identifiers and default thresholds per preset slot are a planning-phase
+  detail, not a specification concern. Hot Water and Heating Circuit each use
+  a separate boolean entity to drive their active indicator, decoupled from
+  the temperature value they display (confirmed against
+  kb.internal/heating-dashboard-icons.html).
 - English is the only required language for default preset names in v1;
   localization of the card's own UI strings is not required.
 - The card targets a single dashboard "card" instance per configuration; sharing
