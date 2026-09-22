@@ -4,7 +4,19 @@ All notable changes to this project are documented in this file.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
-## [0.2.0] - Unreleased
+## [0.2.1] - Unreleased
+
+### Changed
+
+- Editor now built entirely from Home Assistant's native form elements
+  (`ha-select`, `ha-textfield`, `ha-expansion-panel` per appliance,
+  `ha-icon-button` for row actions) instead of plain styled HTML, so it
+  looks and feels like a stock HA card editor. Look-and-feel only — no
+  config field or behavior changed. Inspired by
+  github.com/ADNPolymerase/ha-appliance-card's editor UI (this card keeps
+  its own multi-appliance-per-card config model).
+
+## [0.2.0]
 
 ### Changed
 

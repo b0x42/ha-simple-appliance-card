@@ -100,79 +100,37 @@ export const editorStyles = css`
   .editor {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
+  }
+
+  ha-expansion-panel {
+    --expansion-panel-content-padding: 0;
+    border-radius: var(--ha-card-border-radius, 8px);
   }
 
   .appliance-row {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
     padding: 12px;
-    border-radius: var(--ha-card-border-radius, 8px);
-    border: 1px solid var(--divider-color, #e0e0e0);
-    background: var(--card-background-color, #fff);
   }
 
-  .appliance-row .pickers {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 8px;
-  }
-
+  .appliance-row .pickers,
   .appliance-row .fields {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 8px;
   }
 
-  .field label {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    font-size: 0.85em;
-    color: var(--secondary-text-color, #727272);
-  }
-
-  .field input {
-    box-sizing: border-box;
+  .appliance-row ha-entity-picker,
+  .appliance-row ha-textfield {
     width: 100%;
-    padding: 8px;
-    font-size: 1em;
-    font-family: inherit;
-    color: var(--primary-text-color, #000);
-    background: var(--card-background-color, #fff);
-    border: 1px solid var(--divider-color, #e0e0e0);
-    border-radius: 4px;
-  }
-
-  .field input:focus-visible {
-    outline: 2px solid var(--primary-color, #03a9f4);
-    outline-offset: -1px;
   }
 
   .row-actions {
     display: flex;
     justify-content: flex-end;
     gap: 4px;
-  }
-
-  button {
-    font: inherit;
-    color: var(--primary-color, #03a9f4);
-    background: none;
-    border: 1px solid var(--divider-color, #e0e0e0);
-    border-radius: 4px;
-    padding: 6px 10px;
-    cursor: pointer;
-  }
-
-  button:hover {
-    background: var(--secondary-background-color, #f5f5f5);
-  }
-
-  button:focus-visible {
-    outline: 2px solid var(--primary-color, #03a9f4);
-    outline-offset: 1px;
   }
 
   .add-appliance-row {
@@ -184,24 +142,30 @@ export const editorStyles = css`
     border: 1px dashed var(--divider-color, #e0e0e0);
   }
 
-  .add-appliance-row .field {
+  .add-appliance-row ha-select {
     flex: 1;
     max-width: 260px;
   }
 
-  .add-appliance-row select {
-    box-sizing: border-box;
-    width: 100%;
-    padding: 8px;
-    font-size: 1em;
-    font-family: inherit;
-    color: var(--primary-text-color, #000);
-    background: var(--card-background-color, #fff);
+  .add-appliance {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font: inherit;
+    color: var(--primary-color, #03a9f4);
+    background: none;
     border: 1px solid var(--divider-color, #e0e0e0);
     border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
   }
 
-  .add-appliance {
-    align-self: flex-end;
+  .add-appliance:hover {
+    background: var(--secondary-background-color, #f5f5f5);
+  }
+
+  .add-appliance:focus-visible {
+    outline: 2px solid var(--primary-color, #03a9f4);
+    outline-offset: 1px;
   }
 `;
