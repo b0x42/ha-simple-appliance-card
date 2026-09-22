@@ -77,27 +77,32 @@ that entity's live state.
 
 ### User Story 2 - Start fast with the built-in heating preset (Priority: P2)
 
-A user with a typical Home Assistant heating setup adds the card and applies the
-built-in default preset of 4 heating-related appliances (matching the icons shown
-on Home Assistant's own heating dashboard), supplying only their entity IDs, so
-they get a working card without designing a configuration from scratch.
+A user with a typical Home Assistant heating setup adds an appliance, picks its
+type from the built-in heating preset (matching the icons shown on Home
+Assistant's own heating dashboard) instead of "Generic," and only has to fill in
+the entity ID(s) for that one appliance — its name and icon come from the preset
+— so they get a working appliance without designing a configuration from scratch.
+Repeating this once per appliance is how a user builds up the full 4-appliance
+heating set.
 
 **Why this priority**: Removes setup friction for the most common use case the
 card targets, but the card is already useful via User Story 1 without it.
 
-**Independent Test**: Can be fully tested by configuring the card with the preset
-option and each slot's required entity IDs only (no names/icons) and confirming
-all 4 render with the preset's default names and icons.
+**Independent Test**: Can be fully tested by adding one appliance with its type
+set to a heating preset slot, supplying only that slot's required entity ID(s),
+and confirming it renders with the preset's default name and icon.
 
 **Acceptance Scenarios**:
 
-1. **Given** the built-in heating preset is selected, **When** the user supplies
-   only the entity ID(s) each preset slot requires (one for Circulation Pump/Gas
-   Burner; primary, active, and target entity IDs for Hot Water/Heating Circuit),
-   **Then** each appliance renders with the preset's default name and icon.
-2. **Given** the built-in heating preset is selected, **When** the user overrides
-   the name or icon for one preset slot, **Then** that slot uses the override and
-   the remaining slots keep the preset defaults.
+1. **Given** the editor's "add appliance" control, **When** the user picks a
+   heating preset type (e.g. Hot Water) instead of "Generic" and clicks Add,
+   **Then** a new appliance is added pre-filled with that preset's default name
+   and icon, with its entity/active-entity/target-entity left for the user to
+   fill in via that appliance's own fields.
+2. **Given** a preset-typed appliance has just been added, **When** the user
+   overrides its name or icon via that appliance's own fields, **Then** the
+   override is used instead of the preset default, and adding another appliance
+   afterward is unaffected by that override.
 
 ---
 
@@ -183,8 +188,11 @@ underlying entity.
   **Gas Burner** (primary only, numeric-threshold active mode), **Hot Water**
   (primary + target + separate active entity), and **Heating Circuit**
   (primary + target + separate active entity).
-- **FR-006**: Card MUST let a user apply the built-in heating preset by supplying
-  only entity IDs, without needing to specify names or icons for those 4 slots.
+- **FR-006**: When adding an appliance, the visual editor MUST let a user pick
+  a type — one of the 4 built-in heating preset slots, or "Generic" — before
+  adding it; picking a preset type pre-fills that appliance's name and icon
+  from the preset, so the user only has to supply entity ID(s) for it, not
+  specify a name or icon.
 - **FR-007**: Card MUST support tapping a configured appliance icon to open Home
   Assistant's standard "more info" dialog for the underlying entity — the
   platform's default tap behavior — rather than performing a custom action.
@@ -195,9 +203,9 @@ underlying entity.
 - **FR-009**: Card configuration MUST be supported both via Lovelace YAML and via
   a visual (point-and-click) card editor integrated into the Lovelace UI, so users
   are not required to hand-write YAML to configure the card.
-- **FR-010**: The visual card editor MUST let a user add, edit, and remove
-  appliances — picking an entity and overriding its name/icon — and apply the
-  built-in heating preset, entirely through the Lovelace UI.
+- **FR-010**: The visual card editor MUST let a user add (one at a time, with
+  an optional preset type per FR-006), edit, and remove appliances — picking
+  an entity and overriding its name/icon — entirely through the Lovelace UI.
 - **FR-011**: Project MUST ship user-facing documentation (README) covering:
   step-by-step HACS custom-repository installation, a complete reference of
   every configuration parameter (name, type, required/optional, default
@@ -214,9 +222,9 @@ underlying entity.
   when no active entity is configured), and optional display-name and icon
   overrides.
 - **Appliance Preset**: A built-in, named default definition (icon + display name
-  + expected primary/active/target entity roles) that a user can apply to
-  quickly fill in the 4 heating-dashboard-based appliance slots by supplying
-  only entity IDs.
+  + expected primary/active/target entity roles) a user can pick as an
+  appliance's type when adding it, so that one appliance is pre-filled with
+  the preset's name/icon and the user only supplies its entity ID(s).
 - **Card Configuration**: The complete set of a user's choices for one instance of
   the card on a dashboard — the ordered list of Appliances plus any card-level
   display options.
@@ -228,18 +236,18 @@ underlying entity.
 - **SC-001**: A user can go from installing the card via HACS to seeing a
   correctly configured appliance's live state on their dashboard in under 10
   minutes, following only the project's README.
-- **SC-002**: A user applying the built-in heating preset can get all 4 default
-  appliances showing correct live state by supplying only each slot's required
-  entity ID(s) — one each for Circulation Pump/Gas Burner, up to three
-  (primary/active/target) each for Hot Water/Heating Circuit — with no other
-  configuration required.
+- **SC-002**: A user can build the full 4-appliance heating set showing correct
+  live state by adding each appliance with its preset type selected and
+  supplying only that slot's required entity ID(s) — one each for Circulation
+  Pump/Gas Burner, up to three (primary/active/target) each for Hot Water/
+  Heating Circuit — with no other configuration required per appliance.
 - **SC-003**: An appliance's on/off/unavailable status is distinguishable at a
   glance (icon and/or color) without needing to tap into further detail, for 90%
   of users in informal usability review.
 - **SC-004**: An appliance's displayed state reflects a real Home Assistant state
   change within 2 seconds under normal network conditions.
 - **SC-005**: A user can configure every field of an appliance (entity, name,
-  icon) and apply the built-in heating preset entirely through the visual editor,
+  icon) and add a preset-typed appliance entirely through the visual editor,
   without writing or editing YAML by hand.
 - **SC-006**: A user can write a correct config for a new appliance — including
   one with a target entity — using only the README's parameter reference and

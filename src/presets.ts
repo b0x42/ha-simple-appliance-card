@@ -1,4 +1,4 @@
-import type { Appliance, AppliancePreset } from './types.js';
+import type { AppliancePreset } from './types.js';
 
 /**
  * The 4 built-in heating-dashboard preset slots (spec FR-005), confirmed
@@ -8,6 +8,11 @@ import type { Appliance, AppliancePreset } from './types.js';
  * active mode; Hot Water and Heating Circuit each have a separate boolean
  * entity driving their active indicator, decoupled from the temperature they
  * display.
+ *
+ * Used by the editor's "add appliance" flow (pick a type, then add) to
+ * pre-fill a new appliance's name/icon/default threshold — the user still
+ * fills in the entity/active_entity/target_entity themselves via that
+ * appliance's own entity pickers.
  */
 export const HEATING_PRESET_SLOTS: readonly AppliancePreset[] = [
   {
@@ -35,52 +40,3 @@ export const HEATING_PRESET_SLOTS: readonly AppliancePreset[] = [
     roles: { primary: true, driving: true, target: true },
   },
 ];
-
-/** Entity ID(s) a caller supplies for one driving+target preset slot. */
-export interface DrivingSlotInput {
-  entity: string;
-  active_entity?: string;
-  target_entity?: string;
-}
-
-/** Input to {@link applyHeatingPreset}: entity ID(s) per slot, all optional (partial application allowed). */
-export interface HeatingPresetInput {
-  circulation_pump?: string;
-  gas_burner?: string;
-  hot_water?: DrivingSlotInput;
-  heating_circuit?: DrivingSlotInput;
-}
-
-function applianceFromSlot(
-  slot: AppliancePreset,
-  input: string | DrivingSlotInput,
-): Appliance {
-  const base: Appliance = {
-    entity: typeof input === 'string' ? input : input.entity,
-    name: slot.name,
-    icon: slot.icon,
-  };
-  if (slot.default_active_threshold !== undefined) {
-    base.active_threshold = slot.default_active_threshold;
-  }
-  if (typeof input !== 'string') {
-    if (input.active_entity !== undefined) base.active_entity = input.active_entity;
-    if (input.target_entity !== undefined) base.target_entity = input.target_entity;
-  }
-  return base;
-}
-
-/**
- * Applies the built-in heating preset (FR-006): produces one `Appliance` per
- * supplied slot, in `HEATING_PRESET_SLOTS` order, using each slot's default
- * name/icon. Slots not present in `input` are omitted (partial application).
- */
-export function applyHeatingPreset(input: HeatingPresetInput): Appliance[] {
-  const appliances: Appliance[] = [];
-  for (const slot of HEATING_PRESET_SLOTS) {
-    const slotInput = input[slot.id as keyof HeatingPresetInput];
-    if (slotInput === undefined) continue;
-    appliances.push(applianceFromSlot(slot, slotInput));
-  }
-  return appliances;
-}

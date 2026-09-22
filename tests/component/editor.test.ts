@@ -26,8 +26,14 @@ function pickEntity(root: ShadowRoot, selector: string, value: string): void {
   picker.dispatchEvent(new CustomEvent('value-changed', { detail: { value }, bubbles: true }));
 }
 
+function selectType(root: ShadowRoot, typeId: string): void {
+  const select = root.querySelector<HTMLSelectElement>('[data-field="new-appliance-type"]')!;
+  select.value = typeId;
+  select.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
 describe('ha-simple-appliance-card-editor', () => {
-  it('adding an appliance row emits config-changed with one more appliance', async () => {
+  it('adding a Generic appliance (default type) emits config-changed with one blank appliance', async () => {
     const el = await renderEditor({ type: 'custom:ha-simple-appliance-card', appliances: [] });
 
     const listener = oneEvent(el, 'config-changed');
@@ -36,6 +42,42 @@ describe('ha-simple-appliance-card-editor', () => {
 
     const detail = (event as CustomEvent<{ config: CardConfig }>).detail;
     expect(detail.config.appliances).to.have.lengthOf(1);
+    expect(detail.config.appliances?.[0]).to.deep.equal({ entity: '' });
+  });
+
+  it('selecting "Hot Water" as type then clicking Add produces one appliance pre-filled with its name/icon, entity/active/target left blank', async () => {
+    const el = await renderEditor({ type: 'custom:ha-simple-appliance-card', appliances: [] });
+
+    selectType(el.shadowRoot!, 'hot_water');
+    const listener = oneEvent(el, 'config-changed');
+    el.shadowRoot!.querySelector<HTMLButtonElement>('.add-appliance')!.click();
+    const event = await listener;
+
+    const detail = (event as CustomEvent<{ config: CardConfig }>).detail;
+    expect(detail.config.appliances).to.have.lengthOf(1);
+    expect(detail.config.appliances?.[0]).to.deep.equal({
+      entity: '',
+      name: 'Hot Water',
+      icon: 'mdi:water-boiler',
+    });
+  });
+
+  it('the type selector resets to Generic after adding, so a second Add defaults to blank again', async () => {
+    const el = await renderEditor({ type: 'custom:ha-simple-appliance-card', appliances: [] });
+
+    selectType(el.shadowRoot!, 'gas_burner');
+    let listener = oneEvent(el, 'config-changed');
+    el.shadowRoot!.querySelector<HTMLButtonElement>('.add-appliance')!.click();
+    await listener;
+    await el.updateComplete;
+
+    listener = oneEvent(el, 'config-changed');
+    el.shadowRoot!.querySelector<HTMLButtonElement>('.add-appliance')!.click();
+    const event = await listener;
+
+    const detail = (event as CustomEvent<{ config: CardConfig }>).detail;
+    expect(detail.config.appliances).to.have.lengthOf(2);
+    expect(detail.config.appliances?.[1]).to.deep.equal({ entity: '' });
   });
 
   it('editing an appliance entity picker emits config-changed with the updated value', async () => {
@@ -82,67 +124,20 @@ describe('ha-simple-appliance-card-editor', () => {
     expect(detail.config.appliances?.[1]?.entity).to.equal('sensor.a');
   });
 
-  it('applying the heating preset with 4 slots emits config-changed with 4 appliances using preset defaults (2.1)', async () => {
+  it('overriding a preset-added appliance name via the normal per-row field still works (2.2)', async () => {
     const el = await renderEditor({ type: 'custom:ha-simple-appliance-card', appliances: [] });
-    const root = el.shadowRoot!;
 
-    pickEntity(root, '[data-preset-field="circulation_pump"]', 'sensor.boiler_heatingpumpmod');
-    pickEntity(root, '[data-preset-field="gas_burner"]', 'sensor.boiler_curburnpow');
-    pickEntity(root, '[data-preset-field="hot_water.entity"]', 'sensor.boiler_dhw_curtemp');
-    pickEntity(
-      root,
-      '[data-preset-field="hot_water.active_entity"]',
-      'binary_sensor.boiler_dhw_charging',
-    );
-    pickEntity(root, '[data-preset-field="hot_water.target_entity"]', 'number.boiler_dhw_seltemp');
-    pickEntity(root, '[data-preset-field="heating_circuit.entity"]', 'sensor.boiler_curflowtemp');
-    pickEntity(
-      root,
-      '[data-preset-field="heating_circuit.active_entity"]',
-      'binary_sensor.boiler_heatingactive',
-    );
-    pickEntity(
-      root,
-      '[data-preset-field="heating_circuit.target_entity"]',
-      'sensor.thermostat_hc1_targetflowtemp',
-    );
-
-    const listener = oneEvent(el, 'config-changed');
-    root.querySelector<HTMLButtonElement>('.apply-preset')!.click();
-    const event = await listener;
-
-    const detail = (event as CustomEvent<{ config: CardConfig }>).detail;
-    expect(detail.config.appliances).to.have.lengthOf(4);
-    expect(detail.config.appliances?.map((a) => a.name)).to.deep.equal([
-      'Circulation Pump',
-      'Gas Burner',
-      'Hot Water',
-      'Heating Circuit',
-    ]);
-  });
-
-  it('applying the preset appends to existing appliances without disturbing them, and an override on one preset slot leaves the rest on defaults (2.2)', async () => {
-    const el = await renderEditor({
-      type: 'custom:ha-simple-appliance-card',
-      appliances: [{ entity: 'sensor.existing' }],
-    });
-
-    pickEntity(el.shadowRoot!, '[data-preset-field="circulation_pump"]', 'sensor.boiler_heatingpumpmod');
-
-    const listener = oneEvent(el, 'config-changed');
-    el.shadowRoot!.querySelector<HTMLButtonElement>('.apply-preset')!.click();
-    const firstEvent = (await listener) as CustomEvent<{ config: CardConfig }>;
-    expect(firstEvent.detail.config.appliances).to.have.lengthOf(2);
-    expect(firstEvent.detail.config.appliances?.[1]?.name).to.equal('Circulation Pump');
-
-    // Override the newly-added preset appliance's name via the normal per-row field.
+    selectType(el.shadowRoot!, 'circulation_pump');
+    let listener = oneEvent(el, 'config-changed');
+    el.shadowRoot!.querySelector<HTMLButtonElement>('.add-appliance')!.click();
+    await listener;
     await el.updateComplete;
-    const listener2 = oneEvent(el, 'config-changed');
-    const nameInput = el.shadowRoot!.querySelectorAll<HTMLInputElement>('[data-field="name"]')[1]!;
+
+    listener = oneEvent(el, 'config-changed');
+    const nameInput = el.shadowRoot!.querySelector<HTMLInputElement>('[data-field="name"]')!;
     nameInput.value = 'My Pump';
     nameInput.dispatchEvent(new Event('change', { bubbles: true }));
-    const secondEvent = (await listener2) as CustomEvent<{ config: CardConfig }>;
-    expect(secondEvent.detail.config.appliances?.[1]?.name).to.equal('My Pump');
-    expect(secondEvent.detail.config.appliances?.[0]?.entity).to.equal('sensor.existing');
+    const event = (await listener) as CustomEvent<{ config: CardConfig }>;
+    expect(event.detail.config.appliances?.[0]?.name).to.equal('My Pump');
   });
 });

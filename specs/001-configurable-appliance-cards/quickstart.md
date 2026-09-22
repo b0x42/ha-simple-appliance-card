@@ -43,21 +43,27 @@ Add `name: My Appliance` and `icon: mdi:washing-machine` to the entry above.
 ## 4. Built-in heating preset (User Story 2, SC-002, SC-005)
 
 Via the visual editor (**Add Card** → search "Simple Appliance Card" → editor
-UI), apply the built-in heating preset and supply each slot's entity ID(s)
-(real ones if available):
-- Circulation Pump: `sensor.boiler_heatingpumpmod` (or
+UI), add each of the 4 heating appliances one at a time: pick its type from
+the **Type** dropdown next to "+ Add appliance" (instead of "Generic"), click
+**Add appliance**, then fill in that appliance's entity field(s) (real ones if
+available):
+- Type "Circulation Pump" → entity `sensor.boiler_heatingpumpmod` (or
   `sensor.heatpump_heatingpumpmod`, an equivalent modulation-% sensor from a
   different integration — the preset is entity-agnostic)
-- Gas Burner: `sensor.boiler_curburnpow`
-- Hot Water: primary `sensor.boiler_dhw_curtemp`, active
-  `binary_sensor.boiler_dhw_charging`, target `number.boiler_dhw_seltemp`
-- Heating Circuit: primary `sensor.boiler_curflowtemp`, active
-  `binary_sensor.boiler_heatingactive`, target
+- Type "Gas Burner" → entity `sensor.boiler_curburnpow`
+- Type "Hot Water" → entity `sensor.boiler_dhw_curtemp`, active entity
+  `binary_sensor.boiler_dhw_charging`, target entity
+  `number.boiler_dhw_seltemp`
+- Type "Heating Circuit" → entity `sensor.boiler_curflowtemp`, active entity
+  `binary_sensor.boiler_heatingactive`, target entity
   `sensor.thermostat_hc1_targetflowtemp`
 
 **Expected**:
-- All 4 render with preset default names/icons (Circulation Pump, Gas Burner,
-  Hot Water, Heating Circuit) — Acceptance Scenario 2.1.
+- Each appliance renders with its preset's default name/icon as soon as it's
+  added, before any entity is filled in — Acceptance Scenario 2.1.
+- Overriding one appliance's name/icon via its own fields doesn't affect the
+  type picker's default for the next appliance added — Acceptance Scenario
+  2.2.
 - Hot Water and Heating Circuit derive active/inactive from their `active`
   entity, not their displayed temperature, and show current-vs-target only
   while active and the (rounded) values differ (FR-002, FR-003a) — toggle the
@@ -65,7 +71,7 @@ UI), apply the built-in heating preset and supply each slot's entity ID(s)
 - Every field was set through the editor UI alone, with no hand-written YAML —
   SC-005.
 - Resulting YAML (view via the card's "Edit in YAML" toggle) needs only each
-  slot's required entity ID(s), no other configuration — SC-002.
+  appliance's required entity ID(s), no other configuration — SC-002.
 
 ## 5. Tap → more-info (User Story 3)
 

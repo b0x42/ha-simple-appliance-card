@@ -66,13 +66,15 @@ mapping confirmed against kb.internal/heating-dashboard-icons.html):
    `binary_sensor.boiler_heatingactive`, target
    `sensor.thermostat_hc1_targetflowtemp`).
 
-**Applying a preset** (FR-006) produces one `Appliance` per slot from the
-entity ID(s) supplied for it (one for `circulation_pump`/`gas_burner`; primary
-+ active + target for `hot_water`/`heating_circuit`), using the preset's
-`name`/`icon`/`default_active_threshold` as that appliance's defaults —
-identical in shape to a manually-configured `Appliance`, so the rendering and
-state-derivation logic never needs to know whether an appliance came from a
-preset.
+**Picking a preset type when adding an appliance** (FR-006) produces one
+`Appliance`, pre-filled with the selected slot's `name`/`icon`/
+`default_active_threshold` and an empty `entity` (plus empty `active_entity`/
+`target_entity` for `hot_water`/`heating_circuit`) — the user fills in the
+entity ID(s) afterward via that same appliance's own fields. The result is
+identical in shape to a manually-configured `Appliance` (picking "Generic"
+instead of a preset just skips the pre-fill), so the rendering and
+state-derivation logic never needs to know whether an appliance's defaults
+came from a preset.
 
 ## CardConfig
 
