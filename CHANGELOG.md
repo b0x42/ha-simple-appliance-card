@@ -4,7 +4,16 @@ All notable changes to this project are documented in this file.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
-## [0.1.1] - Unreleased
+## [0.2.0] - Unreleased
+
+### Changed
+
+- Replaced the editor's bulk "apply all 4 preset slots at once" form with a
+  one-at-a-time flow: pick a **Type** (Generic, or a built-in heating preset
+  slot) next to "+ Add appliance," then Add — the new appliance is pre-filled
+  with that type's name/icon, ready for you to fill in its entity field(s).
+
+## [0.1.1]
 
 ### Fixed
 

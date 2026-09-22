@@ -208,20 +208,31 @@ defaults.
       applying the heating preset with each slot's required entity ID(s)
       produces 4 appliances with preset defaults (Acceptance Scenario 2.1);
       overriding one slot's name/icon leaves the other 3 on preset defaults
-      (2.2). Tests MUST fail (no preset action implemented yet).
+      (2.2). Tests MUST fail (no preset action implemented yet). **UX
+      redesign note**: this bulk "apply all 4 at once" form was replaced
+      after live use was reported as "pretty unusable" — see T026/T027's
+      notes below. The tests here were rewritten to cover the replacement
+      one-at-a-time flow; Acceptance Scenarios 2.1/2.2 themselves were
+      reworded in spec.md to match, not just the tests.
 
 ### Implementation for User Story 2
 
 - [X] T025 [US2] Implement the 4 built-in preset definitions in
       `src/presets.ts` per data-model.md `AppliancePreset` table (depends on
       T009)
-- [X] T026 [US2] Implement preset-application logic (per-slot entity ID(s) →
-      `Appliance[]` using preset defaults) in `src/presets.ts`, satisfying
-      T023 (depends on T025)
-- [X] T027 [US2] Add an "Apply built-in heating preset" action to the editor
-      (entity-ID inputs per slot's roles → calls preset-application, emits
-      `config-changed`) in `src/editor.ts`, satisfying T024 (depends on T020,
-      T026)
+- [X] T026 [US2] ~~Implement preset-application logic (per-slot entity ID(s)
+      → `Appliance[]` using preset defaults)~~ — **superseded**: the
+      multi-slot `applyHeatingPreset()`/`HeatingPresetInput` this task
+      originally produced was removed. Replaced by picking a preset type
+      when adding a single appliance (T027), which only needs
+      `HEATING_PRESET_SLOTS` (from T025) directly — no separate
+      application-logic function.
+- [X] T027 [US2] ~~Add an "Apply built-in heating preset" action to the
+      editor~~ — **redesigned**: replaced the 8-field bulk form with a
+      **Type** dropdown next to "+ Add appliance" (Generic or one of the 4
+      preset slots); adding pre-fills one appliance's name/icon/threshold
+      from the selected type, in `src/editor.ts`, satisfying the reworked
+      T024 (depends on T020, T025)
 - [x] T028 [US2] ~~Implement current-vs-target rendering for appliances with a
       `target_entity`~~ — **done early as part of T017** (both live in the
       same `_renderAppliance` method); reworked in place for the collapse

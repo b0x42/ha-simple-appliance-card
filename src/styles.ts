@@ -175,45 +175,33 @@ export const editorStyles = css`
     outline-offset: 1px;
   }
 
-  .add-appliance {
-    align-self: flex-start;
-  }
-
-  .preset-form {
+  .add-appliance-row {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
+    align-items: flex-end;
+    gap: 8px;
     padding: 12px;
     border-radius: var(--ha-card-border-radius, 8px);
+    border: 1px dashed var(--divider-color, #e0e0e0);
+  }
+
+  .add-appliance-row .field {
+    flex: 1;
+    max-width: 260px;
+  }
+
+  .add-appliance-row select {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 8px;
+    font-size: 1em;
+    font-family: inherit;
+    color: var(--primary-text-color, #000);
+    background: var(--card-background-color, #fff);
     border: 1px solid var(--divider-color, #e0e0e0);
-    background: var(--secondary-background-color, #fafafa);
+    border-radius: 4px;
   }
 
-  .preset-form legend {
-    padding: 0 4px;
-    font-weight: 500;
-    color: var(--primary-text-color, #000);
-  }
-
-  .preset-slot {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .preset-slot .slot-title {
-    font-size: 0.9em;
-    font-weight: 500;
-    color: var(--primary-text-color, #000);
-  }
-
-  .preset-slot .pickers {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 8px;
-  }
-
-  .apply-preset {
-    align-self: flex-start;
+  .add-appliance {
+    align-self: flex-end;
   }
 `;

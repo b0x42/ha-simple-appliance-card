@@ -76,11 +76,14 @@ appliances:
 
 ### Built-in heating preset (all 4 slots)
 
-The visual editor's "Apply built-in heating preset" form fills in the 4
-appliances below for you — you only type the entity IDs. Two slots
-(Circulation Pump, Gas Burner) are two status readouts of one physical gas
-boiler, not separate equipment; either can point at any equivalent
-modulation-% sensor (e.g. a different integration's
+Add each appliance one at a time via the visual editor: pick its **Type**
+(Circulation Pump / Gas Burner / Hot Water / Heating Circuit) from the
+dropdown next to "+ Add appliance" instead of "Generic," click **Add
+appliance**, then fill in that appliance's entity field(s) — its name and
+icon are already filled in from the preset. Repeat for all 4 to get the YAML
+below. Two slots (Circulation Pump, Gas Burner) are two status readouts of
+one physical gas boiler, not separate equipment; either can point at any
+equivalent modulation-% sensor (e.g. a different integration's
 `sensor.heatpump_heatingpumpmod` works identically to
 `sensor.boiler_heatingpumpmod`).
 

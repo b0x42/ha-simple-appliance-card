@@ -2,37 +2,25 @@ import { LitElement, html, type TemplateResult } from 'lit';
 import { fireEvent } from 'custom-card-helpers';
 import type { Appliance, CardConfig, HomeAssistant } from './types.js';
 import { normalizeConfig } from './config.js';
-import { applyHeatingPreset, type HeatingPresetInput } from './presets.js';
+import { HEATING_PRESET_SLOTS } from './presets.js';
 import { editorStyles } from './styles.js';
 
-interface PresetFormState {
-  circulation_pump: string;
-  gas_burner: string;
-  hot_water_entity: string;
-  hot_water_active_entity: string;
-  hot_water_target_entity: string;
-  heating_circuit_entity: string;
-  heating_circuit_active_entity: string;
-  heating_circuit_target_entity: string;
-}
-
-const EMPTY_PRESET_FORM: PresetFormState = {
-  circulation_pump: '',
-  gas_burner: '',
-  hot_water_entity: '',
-  hot_water_active_entity: '',
-  hot_water_target_entity: '',
-  heating_circuit_entity: '',
-  heating_circuit_active_entity: '',
-  heating_circuit_target_entity: '',
-};
-
 type ValueChangedEvent = CustomEvent<{ value: string }>;
+
+const APPLIANCE_TYPE_OPTIONS: ReadonlyArray<{ id: string; label: string }> = [
+  { id: '', label: 'Generic appliance' },
+  ...HEATING_PRESET_SLOTS.map((slot) => ({ id: slot.id, label: slot.name })),
+];
 
 /**
  * Visual point-and-click editor for ha-simple-appliance-card. See
  * specs/001-configurable-appliance-cards/contracts/lifecycle-events.md for
  * the `config-changed` event contract this element implements.
+ *
+ * Appliances are added one at a time: pick a type (a built-in heating preset
+ * slot, or "Generic"), then Add — this pre-fills the new appliance's
+ * name/icon/default threshold from that type, leaving entity/active_entity/
+ * target_entity for the user to fill in via that row's own entity pickers.
  *
  * Entity fields use `<ha-entity-picker>` — a Home Assistant frontend custom
  * element, resolved by tag name at runtime (no import: it's already
@@ -49,18 +37,18 @@ export class HaSimpleApplianceCardEditor extends LitElement {
   static override properties = {
     hass: { attribute: false },
     _config: { state: true },
-    _presetForm: { state: true },
+    _newApplianceType: { state: true },
   };
 
   declare hass: HomeAssistant;
 
   declare private _config?: CardConfig & { appliances: Appliance[] };
 
-  declare private _presetForm: PresetFormState;
+  declare private _newApplianceType: string;
 
   constructor() {
     super();
-    this._presetForm = { ...EMPTY_PRESET_FORM };
+    this._newApplianceType = '';
   }
 
   public setConfig(config: CardConfig): void {
@@ -76,7 +64,19 @@ export class HaSimpleApplianceCardEditor extends LitElement {
 
   private _addAppliance(): void {
     if (!this._config) return;
-    this._emitChange([...this._config.appliances, { entity: '' }]);
+    const slot = HEATING_PRESET_SLOTS.find((s) => s.id === this._newApplianceType);
+    const appliance: Appliance = slot
+      ? {
+          entity: '',
+          name: slot.name,
+          icon: slot.icon,
+          ...(slot.default_active_threshold !== undefined
+            ? { active_threshold: slot.default_active_threshold }
+            : {}),
+        }
+      : { entity: '' };
+    this._emitChange([...this._config.appliances, appliance]);
+    this._newApplianceType = '';
   }
 
   private _removeAppliance(index: number): void {
@@ -119,43 +119,6 @@ export class HaSimpleApplianceCardEditor extends LitElement {
     this._emitChange(appliances);
   }
 
-  private _setPresetField(field: keyof PresetFormState, value: string): void {
-    this._presetForm = { ...this._presetForm, [field]: value };
-  }
-
-  private _applyPreset(): void {
-    if (!this._config) return;
-    const form = this._presetForm;
-    const input: HeatingPresetInput = {};
-    if (form.circulation_pump !== '') input.circulation_pump = form.circulation_pump;
-    if (form.gas_burner !== '') input.gas_burner = form.gas_burner;
-    if (form.hot_water_entity !== '') {
-      input.hot_water = {
-        entity: form.hot_water_entity,
-        ...(form.hot_water_active_entity !== ''
-          ? { active_entity: form.hot_water_active_entity }
-          : {}),
-        ...(form.hot_water_target_entity !== ''
-          ? { target_entity: form.hot_water_target_entity }
-          : {}),
-      };
-    }
-    if (form.heating_circuit_entity !== '') {
-      input.heating_circuit = {
-        entity: form.heating_circuit_entity,
-        ...(form.heating_circuit_active_entity !== ''
-          ? { active_entity: form.heating_circuit_active_entity }
-          : {}),
-        ...(form.heating_circuit_target_entity !== ''
-          ? { target_entity: form.heating_circuit_target_entity }
-          : {}),
-      };
-    }
-    const presetAppliances = applyHeatingPreset(input);
-    this._emitChange([...this._config.appliances, ...presetAppliances]);
-    this._presetForm = { ...EMPTY_PRESET_FORM };
-  }
-
   /** An entity picker for a per-appliance-row field (entity/active_entity/target_entity). */
   private _entityPicker(
     label: string,
@@ -175,77 +138,27 @@ export class HaSimpleApplianceCardEditor extends LitElement {
     `;
   }
 
-  /** An entity picker for a preset-form field. */
-  private _presetEntityPicker(label: string, presetField: string, key: keyof PresetFormState): TemplateResult {
+  private _renderAddAppliance(): TemplateResult {
     return html`
-      <ha-entity-picker
-        data-preset-field=${presetField}
-        .hass=${this.hass}
-        .value=${this._presetForm[key]}
-        .label=${label}
-        allow-custom-entity
-        @value-changed=${(e: ValueChangedEvent) => this._setPresetField(key, e.detail.value)}
-      ></ha-entity-picker>
-    `;
-  }
-
-  private _renderPresetForm(): TemplateResult {
-    return html`
-      <fieldset class="preset-form">
-        <legend>Apply built-in heating preset</legend>
-
-        <div class="preset-slot">
-          <div class="slot-title">Circulation Pump</div>
-          <div class="pickers">
-            ${this._presetEntityPicker('Entity', 'circulation_pump', 'circulation_pump')}
-          </div>
-        </div>
-
-        <div class="preset-slot">
-          <div class="slot-title">Gas Burner</div>
-          <div class="pickers">
-            ${this._presetEntityPicker('Entity', 'gas_burner', 'gas_burner')}
-          </div>
-        </div>
-
-        <div class="preset-slot">
-          <div class="slot-title">Hot Water</div>
-          <div class="pickers">
-            ${this._presetEntityPicker('Entity', 'hot_water.entity', 'hot_water_entity')}
-            ${this._presetEntityPicker(
-              'Active entity',
-              'hot_water.active_entity',
-              'hot_water_active_entity',
+      <div class="add-appliance-row">
+        <label class="field">
+          Type
+          <select
+            data-field="new-appliance-type"
+            .value=${this._newApplianceType}
+            @change=${(e: Event) => {
+              this._newApplianceType = (e.target as HTMLSelectElement).value;
+            }}
+          >
+            ${APPLIANCE_TYPE_OPTIONS.map(
+              (opt) => html`<option value=${opt.id}>${opt.label}</option>`,
             )}
-            ${this._presetEntityPicker(
-              'Target entity',
-              'hot_water.target_entity',
-              'hot_water_target_entity',
-            )}
-          </div>
-        </div>
-
-        <div class="preset-slot">
-          <div class="slot-title">Heating Circuit</div>
-          <div class="pickers">
-            ${this._presetEntityPicker('Entity', 'heating_circuit.entity', 'heating_circuit_entity')}
-            ${this._presetEntityPicker(
-              'Active entity',
-              'heating_circuit.active_entity',
-              'heating_circuit_active_entity',
-            )}
-            ${this._presetEntityPicker(
-              'Target entity',
-              'heating_circuit.target_entity',
-              'heating_circuit_target_entity',
-            )}
-          </div>
-        </div>
-
-        <button class="apply-preset" type="button" @click=${() => this._applyPreset()}>
-          Apply preset
+          </select>
+        </label>
+        <button class="add-appliance" type="button" @click=${() => this._addAppliance()}>
+          + Add appliance
         </button>
-      </fieldset>
+      </div>
     `;
   }
 
@@ -343,10 +256,7 @@ export class HaSimpleApplianceCardEditor extends LitElement {
     return html`
       <div class="editor">
         ${this._config.appliances.map((appliance, index) => this._renderRow(appliance, index))}
-        <button class="add-appliance" type="button" @click=${() => this._addAppliance()}>
-          + Add appliance
-        </button>
-        ${this._renderPresetForm()}
+        ${this._renderAddAppliance()}
       </div>
     `;
   }
