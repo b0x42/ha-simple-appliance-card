@@ -4,7 +4,17 @@ All notable changes to this project are documented in this file.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
-## [0.1.0] - Unreleased
+## [0.1.1] - Unreleased
+
+### Fixed
+
+- Editor was completely unstyled (raw browser-default form controls) and
+  entity fields were free-text inputs with no autocomplete — reported as
+  "pretty unusable" after first live install. Added proper theme-aware
+  styling and switched `entity`/`active_entity`/`target_entity` fields
+  (both per-appliance and in the preset form) to `<ha-entity-picker>`.
+
+## [0.1.0]
 
 ### Added
 
