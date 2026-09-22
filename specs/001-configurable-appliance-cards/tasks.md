@@ -413,3 +413,16 @@ Task: "Write component tests in tests/component/editor.test.ts for add/edit/remo
 - Commit after each task or logical group, per constitution Development
   Workflow.
 - Stop at any checkpoint to validate a story independently before continuing.
+
+---
+
+## Phase 7: Convergence
+
+- [X] T043 Add a CI workflow (e.g. `.github/workflows/ci.yml`) that runs
+      lint, typecheck, the full test suite, and the production build on
+      every PR and push, all four required to pass, per Constitution
+      "Development Workflow & Quality Gates" (missing)
+- [ ] T044 Cut a tagged GitHub Release with the built
+      `dist/ha-simple-appliance-card.js` attached as a release asset, so
+      HACS's custom-repository mechanism can actually fetch and install
+      this card, per research.md §7 and spec FR-008 (missing)
