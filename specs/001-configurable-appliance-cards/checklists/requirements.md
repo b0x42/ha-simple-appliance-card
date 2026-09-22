@@ -34,3 +34,6 @@
 - All 3 [NEEDS CLARIFICATION] markers (FR-005, FR-007, FR-009) resolved with user
   on 2026-09-22: preset = heat pump/water heater/gas combi boiler/radiator; tap =
   Home Assistant's default more-info dialog; visual editor required for v1.
+- 2026-09-22 clarify session: resolved active-state signal (numeric threshold on
+  primary entity, default >0, confirmed against the real heating dashboard) and
+  primary+optional-target entity model (FR-001, FR-002, FR-003a, FR-005).

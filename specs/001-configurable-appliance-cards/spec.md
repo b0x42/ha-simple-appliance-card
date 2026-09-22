@@ -8,6 +8,22 @@
 
 **Input**: User description: "build a home assistant lovelace plugin that can be installed via hacs (hacs store integration out of scope) with configurable appliances. in hass heating dashboard 4 icons are the basis for the first set of appliances"
 
+## Clarifications
+
+### Session 2026-09-22
+
+- Q: For non-binary appliances (sensor/number-backed, like the real heating
+  dashboard's modulation % and burner power icons), what determines "active" vs
+  "inactive"? → A: A configurable numeric threshold on the appliance's primary
+  entity value, active by default when the value is greater than 0 — confirmed
+  against the actual Home Assistant heating dashboard, whose 4 icons are driven
+  by `sensor`/`number` values, not switch/climate state.
+- Q: Should an appliance support an optional second "target/setpoint" entity
+  alongside its primary entity? → A: Yes. An appliance has one required primary
+  entity and one optional target entity; when a target is set, the card shows
+  current-vs-target (matching how the real dashboard's Warmwasser and Heizung
+  icons show current + target temperature).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Configure a custom set of appliances (Priority: P1)
@@ -102,25 +118,36 @@ underlying entity.
   or overflowing the dashboard layout.
 - What happens if the same entity is configured as more than one appliance? Each
   configured instance MUST render independently and reflect the same live state.
+- What happens when an appliance's target entity is unavailable while its primary
+  entity is not? The card MUST still show the primary value and indicate the
+  target as unavailable, rather than hiding the whole appliance.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
 - **FR-001**: Card MUST let a user configure an ordered list of appliances on
-  their Lovelace dashboard, each backed by one Home Assistant entity ID.
+  their Lovelace dashboard, each backed by one required primary Home Assistant
+  entity ID and one optional target/setpoint entity ID.
 - **FR-002**: Card MUST render each configured appliance as an icon with a visual
-  indicator of that entity's current state (e.g. on/active, off/inactive,
-  unavailable).
+  indicator of that appliance's active state: active when the primary entity's
+  numeric value is above a configurable threshold (default greater than 0),
+  inactive at or below the threshold, and a distinct unavailable indicator when
+  the primary entity is unavailable or unknown. Non-numeric entities MUST fall
+  back to their base on/off state for this indicator.
 - **FR-003**: Card MUST update a rendered appliance's state indicator whenever the
   underlying entity's state changes in Home Assistant, without requiring a
   dashboard reload.
+- **FR-003a**: When an appliance has a target entity configured, the card MUST
+  display the target entity's current value alongside the primary entity's value
+  (current-vs-target), updating live as either changes.
 - **FR-004**: Card MUST allow a per-appliance override of display name and icon;
   when not overridden, the name and icon MUST fall back to the entity's own
   friendly name and icon.
 - **FR-005**: Card MUST ship with a built-in preset of 4 default appliances
-  matching the icons shown on Home Assistant's stock heating dashboard: **Heat
-  Pump**, **Water Heater**, **Gas Combi Boiler**, and **Radiator**.
+  matching the icons shown on the reference Home Assistant heating dashboard:
+  **Heat Pump** (primary only), **Gas Boiler** (primary only), **Hot Water**
+  (primary + target), and **Heating Circuit** (primary + target).
 - **FR-006**: Card MUST let a user apply the built-in heating preset by supplying
   only entity IDs, without needing to specify names or icons for those 4 slots.
 - **FR-007**: Card MUST support tapping a configured appliance icon to open Home
@@ -136,15 +163,21 @@ underlying entity.
 - **FR-010**: The visual card editor MUST let a user add, edit, and remove
   appliances — picking an entity and overriding its name/icon — and apply the
   built-in heating preset, entirely through the Lovelace UI.
+- **FR-011**: Project MUST ship user-facing documentation (README) covering:
+  step-by-step HACS custom-repository installation, a complete reference of
+  every configuration parameter (name, type, required/optional, default
+  value), and configuration examples for at least: the minimal single-appliance
+  config, a name/icon override, the built-in heating preset, and an appliance
+  with a target entity.
 
 ### Key Entities
 
-- **Appliance**: One configured item on the card, backed by a single Home
-  Assistant entity ID, with optional display-name and icon overrides and an
-  implicit tap behavior.
+- **Appliance**: One configured item on the card — a required primary Home
+  Assistant entity ID, an optional target/setpoint entity ID, an optional
+  active-threshold override, and optional display-name and icon overrides.
 - **Appliance Preset**: A built-in, named default definition (icon + display name
-  + expected entity domain) that a user can apply to quickly fill in the 4
-  heating-dashboard-based appliance slots by supplying only entity IDs.
+  + expected primary/target entity roles) that a user can apply to quickly fill
+  in the 4 heating-dashboard-based appliance slots by supplying only entity IDs.
 - **Card Configuration**: The complete set of a user's choices for one instance of
   the card on a dashboard — the ordered list of Appliances plus any card-level
   display options.
@@ -167,6 +200,9 @@ underlying entity.
 - **SC-005**: A user can configure every field of an appliance (entity, name,
   icon) and apply the built-in heating preset entirely through the visual editor,
   without writing or editing YAML by hand.
+- **SC-006**: A user can write a correct config for a new appliance — including
+  one with a target entity — using only the README's parameter reference and
+  examples, without needing outside help.
 
 ## Assumptions
 
@@ -176,14 +212,13 @@ underlying entity.
 - "Installable via HACS" means installable as a HACS custom repository; getting
   the card accepted into HACS's default curated store is explicitly out of scope
   for this feature (per the user's stated boundary).
-- The first release's built-in preset targets entities typical of a residential
-  heating setup (e.g. climate, switch, or binary_sensor domains); appliance types
-  outside heating are still configurable manually via User Story 1 but are not
-  given their own preset in this feature.
-- The 4 preset appliances (heat pump, water heater, gas combi boiler, radiator)
-  use Home Assistant's standard default icon and domain conventions for that kind
-  of equipment; exact icon identifiers are a planning-phase detail, not a
-  specification concern.
+- Appliance types outside heating are still configurable manually via User
+  Story 1 but are not given their own preset in this feature.
+- The 4 preset appliances (heat pump, gas boiler, hot water, heating circuit) are
+  typically backed by `sensor`/`number` entities reporting modulation, power, or
+  temperature rather than simple switch/climate on-off state; exact icon
+  identifiers and default thresholds per preset slot are a planning-phase detail,
+  not a specification concern.
 - English is the only required language for default preset names in v1;
   localization of the card's own UI strings is not required.
 - The card targets a single dashboard "card" instance per configuration; sharing
