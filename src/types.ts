@@ -1,0 +1,56 @@
+/**
+ * Shared config/view-model types for the Simple Appliance Card.
+ * Field shapes mirror specs/001-configurable-appliance-cards/data-model.md.
+ */
+
+import type { HomeAssistant, LovelaceCardConfig } from 'custom-card-helpers';
+
+export type { HomeAssistant };
+
+/** One configured item on the card (data-model.md > Appliance). */
+export interface Appliance {
+  /** Required primary entity — the displayed value. */
+  entity: string;
+  /**
+   * Optional separate boolean entity that drives the active/inactive
+   * indicator (`is_state(active_entity, 'on')`), decoupled from `entity`'s
+   * own value. When absent, active state is derived from `entity` itself
+   * (numeric threshold, or non-numeric on/off fallback). Confirmed against
+   * kb.internal/heating-dashboard-icons.html: Hot Water and Heating Circuit
+   * drive their icon from a boolean (`binary_sensor.boiler_dhw_charging`,
+   * `binary_sensor.boiler_heatingactive`) that is NOT the value shown.
+   */
+  active_entity?: string;
+  /** Optional target/setpoint entity, shown alongside the primary value. */
+  target_entity?: string;
+  /** Display-name override; falls back to the entity's own friendly_name. */
+  name?: string;
+  /** Icon override (mdi:*); falls back to the entity's own icon. */
+  icon?: string;
+  /** Active-state threshold for numeric entities (ignored when active_entity is set). Default 0. */
+  active_threshold?: number;
+}
+
+/** A built-in, named default appliance (data-model.md > AppliancePreset). */
+export interface AppliancePreset {
+  id: string;
+  name: string;
+  icon: string;
+  roles: {
+    primary: true;
+    /** Whether this preset slot has a separate boolean driving entity. */
+    driving: boolean;
+    target: boolean;
+  };
+  default_active_threshold?: number;
+}
+
+/** The complete configuration for one card instance. */
+export interface CardConfig extends LovelaceCardConfig {
+  type: string;
+  appliances?: Appliance[];
+  title?: string;
+}
+
+/** Derived (not stored) active-state of an appliance's primary entity. */
+export type DerivedState = 'active' | 'inactive' | 'unavailable';

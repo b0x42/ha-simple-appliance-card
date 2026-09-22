@@ -1,0 +1,187 @@
+# Phase 0 Research: Configurable Appliance Cards
+
+## 1. Component framework
+
+**Decision**: `lit` (LitElement), bundled into the card's own single output
+file (not marked `external` in Rollup).
+
+**Rationale**: Every actively maintained HA custom card in the ecosystem is built
+on Lit; using anything else forces users to load a second reactive-rendering
+library alongside the one Home Assistant's own frontend uses, working against
+Principle V's spirit even though it must still be bundled (see correction below).
+Lit's `@customElement`, `@property`/`@state` decorators and scoped-style `css`
+tagged template map cleanly onto the required custom-card lifecycle
+(`setConfig`, `hass` setter, `render()`).
+
+**Correction (recorded during `/speckit-implement`)**: this decision originally
+proposed treating `lit` as a Rollup `external` "already loaded by the Home
+Assistant frontend at runtime." That is incorrect and was caught before writing
+the build config: `lit` ships no UMD/global build, and Home Assistant provides
+third-party custom cards no shared module scope or import map to resolve a bare
+`import ... from 'lit'` against at runtime — each custom card loads as an
+independent `<script>` with its own module graph. Marking it `external` with no
+`output.globals` mapping would leave an unresolved import in the built bundle,
+which is both broken at runtime and a direct violation of the constitution's
+"single self-contained JavaScript bundle... no unresolved runtime imports"
+requirement. **`lit` is therefore bundled**, same as `custom-card-helpers`; this
+is the standard, accepted tradeoff every other HACS Lovelace card ships with
+(each card carries its own copy of Lit), and is justified under Principle V as
+the only way to satisfy the "no unresolved runtime imports" constraint at all.
+
+**Alternatives considered**: Vanilla `HTMLElement` (no framework) — rejected,
+would hand-roll change detection and templating that Lit already provides for
+free and that reviewers/contributors familiar with the ecosystem already expect.
+React/Preact — rejected outright by Principle V (adds a second, heavier rendering
+runtime purely for a handful of icons).
+
+## 2. Helper utilities
+
+**Decision**: Add `custom-card-helpers` as the one new runtime dependency, used
+only for `fireEvent` (dispatching the `hass-more-info` event) and
+`hasConfigOrEntityChanged` (cheap re-render gating).
+
+**Rationale**: Both functions are a few lines each; every other maintained custom
+card depends on this package for exactly this reason, so config/editor code reads
+the same way a reviewer already expects. The package has no further transitive
+dependencies and is typically inlined at a few hundred bytes after tree-shaking.
+
+**Alternatives considered**: Hand-rolled equivalents — rejected; the maintenance
+and bug-surface cost of re-implementing `fireEvent`'s bubbling/composed event
+construction is not worth avoiding a near-zero-weight, ecosystem-standard
+dependency. This satisfies Principle V's "justify in the PR description" bar at
+the research stage.
+
+## 3. Build tool
+
+**Decision**: Rollup, producing a single IIFE bundle (`dist/ha-simple-appliance-card.js`)
+with both `lit` and `custom-card-helpers` bundled in (see §1 correction) and
+nothing marked `external`.
+
+**Rationale**: Rollup is the toolchain most HACS Lovelace cards already use, has
+first-class support for marking a dependency `external` while still bundling
+others, and produces a clean single-file browser bundle without extra runtime
+loader code — matching the constitution's "single self-contained JavaScript
+bundle" requirement exactly.
+
+**Alternatives considered**: esbuild — also acceptable per the constitution
+(`Rollup or esbuild`) and faster, but Rollup's plugin ecosystem for
+"bundle-this-dependency, externalize-that-one" is more mature and better
+documented for this exact HA-custom-card pattern, so it was chosen for lower
+long-term maintenance risk.
+
+## 4. Testing stack
+
+**Decision**: `@web/test-runner` running specs in real headless Chromium (via
+`@web/test-runner-playwright`), with `@open-wc/testing` for `fixture()`/`html`
+component-test helpers, plus plain Mocha-style `describe`/`it` unit tests (no
+DOM) for pure logic, all under `@web/test-runner`'s built-in (istanbul-based)
+coverage reporter gating the constitution's 80% branch-coverage floor on
+non-DOM logic (`state.ts`, `presets.ts`, `config.ts`).
+
+**Rationale**: Lit's own documented testing pattern uses `@web/test-runner` in a
+real browser rather than a DOM-emulation layer, because shadow DOM, CSS custom
+property inheritance (needed to verify HA theme-variable rendering per
+constitution Principle IV), and custom-element upgrade timing don't reliably
+match real-browser behavior otherwise.
+
+**Alternatives considered**: Vitest + `jsdom` — rejected as the primary tool;
+jsdom's shadow DOM and CSS custom property support is incomplete enough that a
+test asserting "the appliance renders using `--primary-color`" could pass in
+jsdom and still be wrong in a real browser, undermining Principle IV's
+verification story. Vitest remains a fine choice for pure-logic unit tests in
+isolation, but using one runner for both keeps the test setup and coverage
+report unified.
+
+## 5. State-active model
+
+**Decision**: An appliance's active/inactive indicator uses one of two modes:
+
+- **Separate active entity** (`active_entity` configured): active iff that
+  entity's state is `on`; unavailable iff it is unavailable/unknown/missing.
+  The primary entity's own value is not consulted at all for this indicator.
+- **No active entity** (fallback): numeric entities (`sensor`, `number`) are
+  active when `Number(state) > threshold` (default `threshold = 0`,
+  overridable per appliance); non-numeric entities fall back to their base HA
+  `state !== 'off'`.
+
+Either mode maps unavailable/unknown/missing on its driving entity to the
+distinct unavailable indicator per spec FR-002.
+
+**Correction (recorded during `/speckit-implement`, superseding this
+section's original single-mode decision)**: the original decision — pure
+numeric-threshold-on-primary for all 4 preset appliances — was itself an
+incomplete read of the reference dashboard, caught only after implementing it:
+`/speckit-clarify`'s dashboard-config inspection showed *which* entities each
+icon reads, but not which one actually *drives* the active state. The
+dashboard's own design-system documentation
+(kb.internal/heating-dashboard-icons.html, found mid-implementation) makes
+this explicit: Hot Water and Heating Circuit drive their icon from a separate
+boolean (`binary_sensor.boiler_dhw_charging`,
+`binary_sensor.boiler_heatingactive`) that is **not** the temperature value
+displayed — a numeric threshold on the displayed value would have been wrong
+for half the preset. Circulation Pump and Gas Burner are unaffected: their
+driving and displayed entity are the same numeric sensor, so the original
+threshold model still applies to them via the fallback mode above.
+
+**Alternatives considered**: Domain-specific logic per entity domain (e.g. read
+`hvac_action` for `climate`, `state` for `switch`) — rejected as the general
+rule; adds a growing per-domain special-case table for marginal benefit, since
+the two-mode rule above already correctly covers every entity type the
+built-in preset targets, and any domain can still be pointed at manually with
+an appropriate threshold or a manually-specified `active_entity`.
+
+## 5a. Target display collapse rule
+
+**Decision**: When an appliance has a `target_entity`, its value is shown
+alongside the primary value only while the appliance is active **and** the
+two values (rounded, for numeric values) differ; otherwise only the primary
+value renders. A `target_entity` that is itself unavailable is always
+surfaced as "target: unavailable," independent of this rule.
+
+**Rationale**: kb.internal/heating-dashboard-icons.html documents this
+explicitly as the "current/target-with-collapse pattern" for both Hot Water
+and Heating Circuit: "shown as current/target only while \[active\] and the
+two (rounded) values differ; otherwise just current." Always showing the
+target (this feature's original, simpler behavior) would clutter the card
+with a redundant "target: 45°C" next to "45.1°C" whenever the setpoint has
+already been reached — exactly the noise the reference dashboard's own design
+deliberately avoids.
+
+**Alternatives considered**: Always show target when configured (original
+decision, since replaced) — rejected once the reference dashboard's actual
+behavior was found; it reads as more cluttered and less faithful to the
+feature the built-in preset explicitly promises to match (spec FR-005).
+
+## 6. Tap interaction
+
+**Decision**: Tapping an appliance dispatches the standard Home Assistant
+`hass-more-info` custom event (`bubbles: true, composed: true`, detail
+`{ entityId }`) via `fireEvent`, opening the platform's own more-info dialog.
+
+**Rationale**: This is the documented, ecosystem-standard way a custom card
+delegates to Home Assistant's own entity dialog without reimplementing it or
+calling any service/WebSocket API directly — satisfying both spec FR-007 and the
+constitution's Principle III restriction against calling `hass.callService`/
+`hass.callWS` outside documented user-triggered actions (this isn't a service
+call at all).
+
+**Alternatives considered**: Direct `hass.callService('homeassistant', 'toggle', ...)`
+on tap — rejected per the clarified spec (FR-007 explicitly chose the platform
+default dialog over a custom toggle action).
+
+## 7. HACS distribution
+
+**Decision**: Ship a root `hacs.json` (`name`, `render_readme: true`,
+`content_in_root: false`, `filename: ha-simple-appliance-card.js`) plus a GitHub
+Release per version with the built `dist/ha-simple-appliance-card.js` attached,
+so users add this repository as a HACS "custom repository" (category:
+"Lovelace") and HACS fetches the release asset directly.
+
+**Rationale**: This is the documented HACS integration contract for a
+single-file Lovelace card and requires no submission to the default HACS store,
+matching spec FR-008/Assumptions exactly.
+
+**Alternatives considered**: Committing `dist/` directly to `main` and pointing
+`hacs.json` at the repo root — rejected; mixes generated build output into
+version-controlled source history, conflicting with the constitution's `src/`
+vs `dist/` separation and the Development Workflow's CI-builds-on-every-PR gate.
