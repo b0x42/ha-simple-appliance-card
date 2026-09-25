@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.3.0] - 2026-09-25
 
 ### Changed
 
@@ -16,7 +16,7 @@ versioning follows [Semantic Versioning](https://semver.org/).
   native `<select>` (kept from the 0.2.2 fix below) with only its decoration
   restyled, to avoid reintroducing that same click-reliability regression.
 
-## [0.2.2] - Unreleased
+## [0.2.2]
 
 ### Fixed
 
