@@ -131,10 +131,9 @@ correctly-configured appliance row.
   correctly in both light and dark themes without hard-coded colors.
 - **FR-005**: The add-appliance type control MUST use the same filled-row
   visual style as other fields rather than an unstyled native `<select>`,
-  while preserving current keyboard operability and click reliability (the
-  editor previously shipped a regression where a styled dropdown stopped
-  responding to clicks; the replacement MUST NOT reintroduce that failure
-  mode).
+  while remaining fully keyboard-operable and 100% click-reliable — every
+  click on it MUST open or interact with the dropdown, with no dead zones or
+  unresponsive clicks under any restyling.
 - **FR-006**: All existing editing actions — add appliance, remove appliance,
   reorder appliance (move up/down), edit entity/active entity/target entity,
   edit name/icon/active threshold overrides — MUST continue to work
@@ -151,6 +150,11 @@ correctly-configured appliance row.
   does not add a new editable-after-creation "type" field. The reference
   screenshot's left-hand settings panel (filled rows + collapsible
   icon/title/chevron sections) is the style target, not its specific fields.
+- **FR-010**: The remove and move-up/move-down icon buttons on each appliance
+  section MUST be restyled alongside the rest of the section chrome (spacing,
+  icon treatment, hover/focus state) so they read as part of the same native
+  visual system as the rest of the row — not left as a visibly separate,
+  unstyled leftover.
 
 ### Key Entities
 
@@ -164,8 +168,11 @@ correctly-configured appliance row.
 ### Measurable Outcomes
 
 - **SC-001**: In a side-by-side visual comparison against a native Home
-  Assistant settings screen, testers cannot identify the card editor as
-  third-party styling in at least 90% of trials.
+  Assistant settings screen, the card editor's row style (filled background,
+  label-above-value layout, spacing, corner radius, iconography) is
+  indistinguishable from the native screen's — verified by the maintainer (or
+  any reviewer) doing that comparison directly, not by a formal blind user
+  study.
 - **SC-002**: 100% of existing editor actions (add, remove, reorder, edit each
   field) produce the same resulting configuration before and after this
   change — zero functional regressions.
