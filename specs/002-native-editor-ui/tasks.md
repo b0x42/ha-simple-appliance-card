@@ -97,8 +97,10 @@ light and a dark theme (spec User Story 1 Independent Test).
       `ha-expansion-panel`/`.appliance-row` rules — and confirm every color
       value is a Home Assistant theme CSS custom property (FR-004,
       constitution Principle IV); fix any hard-coded value found.
-- [ ] T008 [US1] Manual: run `quickstart.md` steps 2–3 (dark theme, light
-      theme row-color check) in a live/dev Home Assistant instance; fix any
+- [ ] T008 [US1] Manual: run `quickstart.md` steps 1–3 (row-styling
+      side-by-side comparison against native HA — this is User Story 1's
+      own stated Independent Test — plus dark theme, light theme row-color
+      check) in a live/dev Home Assistant instance; fix any styling or
       theme-variable gap found.
 
 **Checkpoint**: User Story 1 is fully functional and independently testable —
@@ -124,7 +126,10 @@ expands only that section (spec User Story 2 Independent Test).
       that each appliance's `ha-expansion-panel` contains a child
       `<ha-icon slot="leading-icon">` whose `icon` attribute equals the
       appliance's configured `icon` when set, and the fallback icon
-      constant (T010) when not set. Test MUST fail before implementation.
+      constant (T010) when not set. Also add an assertion for FR-003: with
+      2+ appliances rendered, expanding one panel (set/toggle its
+      `expanded` property or click its header) leaves every other panel's
+      `expanded` state unchanged. Test MUST fail before implementation.
 
 ### Implementation for User Story 2
 
@@ -136,14 +141,13 @@ expands only that section (spec User Story 2 Independent Test).
 - [ ] T011 [US2] In `_renderRow()` (`src/editor.ts`), add
       `<ha-icon slot="leading-icon" icon=${appliance.icon ?? FALLBACK_ICON}>`
       as a child of each appliance's `ha-expansion-panel` (implements T009).
-- [ ] T012 [US2] Verify `_rowHeader()`'s existing fallback label logic
-      (name → entity → `'New appliance'`) still reads correctly alongside
-      the new leading icon for a blank appliance (spec User Story 2
-      Acceptance Scenario 3); no functional change to `_rowHeader()` is
-      expected — confirm by rendering, in `src/editor.ts`.
 - [ ] T013 [US2] Manual: run `quickstart.md` steps 4–5 (independent
       collapse/expand, blank-appliance fallback icon/label) in a live HA
-      dev instance.
+      dev instance. Along the way, confirm `_rowHeader()`'s existing
+      fallback label logic (name → entity → `'New appliance'`) still reads
+      correctly alongside the new leading icon for a blank appliance (spec
+      User Story 2 Acceptance Scenario 3) — no functional change to
+      `_rowHeader()` is expected.
 
 **Checkpoint**: User Story 2 is fully functional and independently testable —
 sections show icon + title + chevron, collapse/expand independently, and
@@ -213,9 +217,18 @@ click-reliability regression.
       `tests/component/editor.test.ts` (SC-002), and confirm by inspection
       that no unstyled raw HTML form control remains visible anywhere in the
       editor (SC-003).
-- [ ] T023 Run the full `quickstart.md` 10-step manual checklist end-to-end
+- [ ] T023 Keyboard-only navigation check (`quickstart.md` step 11, FR-007,
+      constitution Principle IV): Tab/Shift+Tab, Enter, and Space through an
+      appliance section's leading icon, header, fields, and remove/move
+      buttons, then through the type dropdown and "Add appliance" button —
+      no mouse. Every interactive element MUST be reachable with a visible
+      focus indicator and MUST activate exactly as before this restyle; the
+      new leading-icon and decorative chevron MUST NOT be focusable or
+      break Tab order. Fix any regression found in `src/editor.ts`/
+      `src/styles.ts`.
+- [ ] T024 Run the full `quickstart.md` 11-step manual checklist end-to-end
       as final sign-off (including step 10, the row-action button restyle
-      from FR-010/T006).
+      from FR-010/T006, and step 11, T023's keyboard-nav check).
 
 ---
 

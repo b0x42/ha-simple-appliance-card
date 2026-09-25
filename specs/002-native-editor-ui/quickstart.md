@@ -60,9 +60,17 @@ changing existing ones.
     icon buttons on each appliance section visually match the rest of the
     restyled section chrome (spacing, icon treatment, hover/focus state)
     rather than looking like an unstyled leftover.
+11. **Keyboard-only navigation** (FR-007): Using only Tab/Shift+Tab, Enter,
+    and Space (no mouse), navigate through an appliance section's leading
+    icon area, header (expand/collapse), fields, and remove/move buttons,
+    then through the type dropdown and "Add appliance" button. Confirm every
+    interactive element is reachable, shows a visible focus indicator, and
+    activates via keyboard exactly as it did before this restyle — the new
+    leading-icon and chevron decoration MUST NOT be focusable or intercept
+    Tab order (they carry no interactive semantics).
 
 ## Pass criteria
 
-All 10 manual steps above match their described behavior, and both automated
+All 11 manual steps above match their described behavior, and both automated
 checks (`npm run lint`, `npm test`) pass with zero changes to existing
 assertions.
