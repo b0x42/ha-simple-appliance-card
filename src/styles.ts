@@ -189,7 +189,6 @@ export const editorStyles = css`
    * can never intercept a click meant for the select underneath it.
    */
   .type-field-row {
-    position: relative;
     flex: 1;
     min-width: 0;
     max-width: 260px;
@@ -199,9 +198,18 @@ export const editorStyles = css`
     display: flex;
     flex-direction: column;
     gap: 4px;
-    padding: 8px 36px 8px 12px;
+    padding: 8px 12px;
     font-size: 0.85em;
     color: var(--secondary-text-color, #727272);
+  }
+
+  /*
+   * Positioning context scoped to the select alone (not the whole
+   * label+select stack) so the chevron below centers on the select's own
+   * line, not the midpoint of the taller "Type" caption + select column.
+   */
+  .select-wrap {
+    position: relative;
   }
 
   .type-field select {
@@ -210,7 +218,7 @@ export const editorStyles = css`
     box-sizing: border-box;
     width: 100%;
     min-width: 0;
-    padding: 4px 0;
+    padding: 4px 24px 4px 0;
     font-size: 1em;
     font-family: inherit;
     color: var(--primary-text-color, #000);
@@ -226,11 +234,11 @@ export const editorStyles = css`
     outline-offset: 2px;
   }
 
-  .type-field-row::after {
+  .select-wrap::after {
     content: '';
     position: absolute;
     top: 50%;
-    right: 14px;
+    right: 8px;
     width: 8px;
     height: 8px;
     margin-top: -6px;

@@ -182,17 +182,19 @@ export class HaSimpleApplianceCardEditor extends LitElement {
         <div class="field-row type-field-row">
           <label class="type-field">
             Type
-            <select
-              data-field="new-appliance-type"
-              .value=${this._newApplianceType}
-              @change=${(e: Event) => {
-                this._newApplianceType = (e.target as HTMLSelectElement).value;
-              }}
-            >
-              ${APPLIANCE_TYPE_OPTIONS.map(
-                (opt) => html`<option value=${opt.id}>${opt.label}</option>`,
-              )}
-            </select>
+            <span class="select-wrap">
+              <select
+                data-field="new-appliance-type"
+                .value=${this._newApplianceType}
+                @change=${(e: Event) => {
+                  this._newApplianceType = (e.target as HTMLSelectElement).value;
+                }}
+              >
+                ${APPLIANCE_TYPE_OPTIONS.map(
+                  (opt) => html`<option value=${opt.id}>${opt.label}</option>`,
+                )}
+              </select>
+            </span>
           </label>
         </div>
         <button class="add-appliance" type="button" @click=${() => this._addAppliance()}>
