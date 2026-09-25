@@ -4,6 +4,18 @@ All notable changes to this project are documented in this file.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- Editor visually restyled to match native Home Assistant configuration
+  screens (filled, rounded, label-above-value rows for every field; each
+  appliance section now shows a leading icon and chevron matching native
+  grouped-settings styling). Appearance only — no config field, editor
+  behavior, or event contract changed. The appliance-type control stays a
+  native `<select>` (kept from the 0.2.2 fix below) with only its decoration
+  restyled, to avoid reintroducing that same click-reliability regression.
+
 ## [0.2.2] - Unreleased
 
 ### Fixed

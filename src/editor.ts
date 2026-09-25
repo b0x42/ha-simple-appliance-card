@@ -15,6 +15,12 @@ const APPLIANCE_TYPE_OPTIONS: ReadonlyArray<{ id: string; label: string }> = [
   ...HEATING_PRESET_SLOTS.map((slot) => ({ id: slot.id, label: slot.name })),
 ];
 
+/** Leading-icon fallback for an appliance section with no configured icon.
+ * Intentionally mirrors `DEFAULT_ICON` in ha-simple-appliance-card.ts rather
+ * than importing it — this feature's file scope is editor.ts/styles.ts only
+ * (specs/002-native-editor-ui/research.md §3). */
+const FALLBACK_ICON = 'mdi:power-plug';
+
 /**
  * Visual point-and-click editor for ha-simple-appliance-card. See
  * specs/001-configurable-appliance-cards/contracts/lifecycle-events.md for
@@ -137,14 +143,16 @@ export class HaSimpleApplianceCardEditor extends LitElement {
     onChange: (value: string) => void,
   ): TemplateResult {
     return html`
-      <ha-entity-picker
-        data-field=${dataField}
-        .hass=${this.hass}
-        .value=${value}
-        .label=${label}
-        allow-custom-entity
-        @value-changed=${(e: ValueChangedEvent) => onChange(e.detail.value)}
-      ></ha-entity-picker>
+      <div class="field-row">
+        <ha-entity-picker
+          data-field=${dataField}
+          .hass=${this.hass}
+          .value=${value}
+          .label=${label}
+          allow-custom-entity
+          @value-changed=${(e: ValueChangedEvent) => onChange(e.detail.value)}
+        ></ha-entity-picker>
+      </div>
     `;
   }
 
@@ -156,33 +164,39 @@ export class HaSimpleApplianceCardEditor extends LitElement {
     type: 'text' | 'number' = 'text',
   ): TemplateResult {
     return html`
-      <ha-textfield
-        data-field=${dataField}
-        type=${type}
-        .label=${label}
-        .value=${value}
-        @input=${(e: Event) => onChange((e.target as unknown as ValueTarget).value)}
-      ></ha-textfield>
+      <div class="field-row">
+        <ha-textfield
+          data-field=${dataField}
+          type=${type}
+          .label=${label}
+          .value=${value}
+          @input=${(e: Event) => onChange((e.target as unknown as ValueTarget).value)}
+        ></ha-textfield>
+      </div>
     `;
   }
 
   private _renderAddAppliance(): TemplateResult {
     return html`
       <div class="add-appliance-row">
-        <label class="type-field">
-          Type
-          <select
-            data-field="new-appliance-type"
-            .value=${this._newApplianceType}
-            @change=${(e: Event) => {
-              this._newApplianceType = (e.target as HTMLSelectElement).value;
-            }}
-          >
-            ${APPLIANCE_TYPE_OPTIONS.map(
-              (opt) => html`<option value=${opt.id}>${opt.label}</option>`,
-            )}
-          </select>
-        </label>
+        <div class="field-row type-field-row">
+          <label class="type-field">
+            Type
+            <span class="select-wrap">
+              <select
+                data-field="new-appliance-type"
+                .value=${this._newApplianceType}
+                @change=${(e: Event) => {
+                  this._newApplianceType = (e.target as HTMLSelectElement).value;
+                }}
+              >
+                ${APPLIANCE_TYPE_OPTIONS.map(
+                  (opt) => html`<option value=${opt.id}>${opt.label}</option>`,
+                )}
+              </select>
+            </span>
+          </label>
+        </div>
         <button class="add-appliance" type="button" @click=${() => this._addAppliance()}>
           <ha-icon icon="mdi:plus"></ha-icon>
           Add appliance
@@ -198,6 +212,10 @@ export class HaSimpleApplianceCardEditor extends LitElement {
   private _renderRow(appliance: Appliance, index: number): TemplateResult {
     return html`
       <ha-expansion-panel outlined .header=${this._rowHeader(appliance)}>
+        <ha-icon
+          slot="leading-icon"
+          icon=${appliance.icon ?? FALLBACK_ICON}
+        ></ha-icon>
         <div class="appliance-row">
           <div class="pickers">
             ${this._entityPicker('Entity', 'entity', appliance.entity, (v) =>

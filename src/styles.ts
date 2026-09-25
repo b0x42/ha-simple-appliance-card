@@ -108,11 +108,29 @@ export const editorStyles = css`
     border-radius: var(--ha-card-border-radius, 8px);
   }
 
+  /*
+   * Shared filled-row container for every editable field (entity pickers,
+   * text fields, the appliance-type select). ha-entity-picker/ha-textfield
+   * already render Material's filled label-above-value style on their own;
+   * this wrapper's job is just the consistent rounded corners + background
+   * that make every row read as one native-looking set, matching
+   * specs/002-native-editor-ui/research.md §4.
+   */
+  .field-row {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    border-radius: var(--ha-card-border-radius, 12px);
+    overflow: hidden;
+    background: var(--secondary-background-color, var(--card-background-color, #fff));
+  }
+
   .appliance-row {
     display: flex;
     flex-direction: column;
     gap: 12px;
     padding: 12px;
+    min-width: 0;
   }
 
   .appliance-row .pickers,
@@ -120,6 +138,7 @@ export const editorStyles = css`
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 8px;
+    min-width: 0;
   }
 
   .appliance-row ha-entity-picker,
@@ -131,10 +150,29 @@ export const editorStyles = css`
     display: flex;
     justify-content: flex-end;
     gap: 4px;
+    padding-top: 4px;
+    border-top: 1px solid var(--divider-color, #e0e0e0);
+  }
+
+  .row-actions ha-icon-button {
+    border-radius: 50%;
+    --mdc-icon-button-size: 36px;
+    color: var(--secondary-text-color, #727272);
+  }
+
+  .row-actions ha-icon-button:hover {
+    background: var(--secondary-background-color, rgba(0, 0, 0, 0.05));
+    color: var(--primary-text-color, #000);
+  }
+
+  .row-actions ha-icon-button:focus-visible {
+    outline: 2px solid var(--primary-color, #03a9f4);
+    outline-offset: -2px;
   }
 
   .add-appliance-row {
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-end;
     gap: 8px;
     padding: 12px;
@@ -142,31 +180,72 @@ export const editorStyles = css`
     border: 1px dashed var(--divider-color, #e0e0e0);
   }
 
-  .add-appliance-row .type-field {
+  /*
+   * The appliance-type control stays a real native select for click
+   * reliability (specs/002-native-editor-ui/research.md §5 - a styled
+   * overlay is exactly how the v0.2.1 click regression happened). Only its
+   * decoration is layered on: appearance:none removes the browser's own
+   * arrow, and the chevron below is drawn with pointer-events:none so it
+   * can never intercept a click meant for the select underneath it.
+   */
+  .type-field-row {
     flex: 1;
+    min-width: 0;
     max-width: 260px;
+  }
+
+  .type-field {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    padding: 8px 12px;
     font-size: 0.85em;
     color: var(--secondary-text-color, #727272);
   }
 
-  .add-appliance-row select {
+  /*
+   * Positioning context scoped to the select alone (not the whole
+   * label+select stack) so the chevron below centers on the select's own
+   * line, not the midpoint of the taller "Type" caption + select column.
+   */
+  .select-wrap {
+    position: relative;
+  }
+
+  .type-field select {
+    appearance: none;
+    -webkit-appearance: none;
     box-sizing: border-box;
     width: 100%;
-    padding: 8px;
+    min-width: 0;
+    padding: 4px 24px 4px 0;
     font-size: 1em;
     font-family: inherit;
     color: var(--primary-text-color, #000);
-    background: var(--card-background-color, #fff);
-    border: 1px solid var(--divider-color, #e0e0e0);
-    border-radius: 4px;
+    background: none;
+    border: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .add-appliance-row select:focus-visible {
+  .type-field select:focus-visible {
     outline: 2px solid var(--primary-color, #03a9f4);
-    outline-offset: -1px;
+    outline-offset: 2px;
+  }
+
+  .select-wrap::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    margin-top: -6px;
+    pointer-events: none;
+    border-right: 2px solid var(--secondary-text-color, #727272);
+    border-bottom: 2px solid var(--secondary-text-color, #727272);
+    transform: rotate(45deg);
   }
 
   .add-appliance {
