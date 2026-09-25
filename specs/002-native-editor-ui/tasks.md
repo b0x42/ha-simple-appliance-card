@@ -32,7 +32,7 @@ No other source file changes (plan.md Project Structure).
 
 **Purpose**: Confirm a clean starting point before any restyle work.
 
-- [ ] T001 Run `npm run lint` and `npm test` on the current tree (no file
+- [X] T001 Run `npm run lint` and `npm test` on the current tree (no file
       changes) and confirm both pass — establishes the pre-restyle baseline
       that `tests/component/editor.test.ts`'s existing assertions must keep
       passing unchanged throughout this feature (SC-002).
@@ -46,7 +46,7 @@ No other source file changes (plan.md Project Structure).
 **Purpose**: Shared row-container CSS that User Story 1 and User Story 3 both
 build on. **MUST complete before those stories' implementation tasks.**
 
-- [ ] T002 Add a `.field-row` base rule to `editorStyles` in `src/styles.ts`:
+- [X] T002 Add a `.field-row` base rule to `editorStyles` in `src/styles.ts`:
       filled background via `var(--secondary-background-color, ...)`,
       `border-radius: var(--ha-card-border-radius, 12px)`, and consistent
       padding — the shared filled-row container research.md §4 designs
@@ -73,7 +73,7 @@ light and a dark theme (spec User Story 1 Independent Test).
 
 ### Tests for User Story 1
 
-- [ ] T003 [P] [US1] In `tests/component/editor.test.ts`, add an assertion
+- [X] T003 [P] [US1] In `tests/component/editor.test.ts`, add an assertion
       that each of `[data-field="entity"]`, `[data-field="active_entity"]`,
       `[data-field="target_entity"]`, `[data-field="name"]`,
       `[data-field="icon"]`, `[data-field="active_threshold"]` is contained
@@ -82,17 +82,17 @@ light and a dark theme (spec User Story 1 Independent Test).
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] In `_entityPicker()` (`src/editor.ts`), wrap the rendered
+- [X] T004 [US1] In `_entityPicker()` (`src/editor.ts`), wrap the rendered
       `<ha-entity-picker>` in a `.field-row` container (implements T003 for
       the three entity-picker fields).
-- [ ] T005 [US1] In `_textField()` (`src/editor.ts`), wrap the rendered
+- [X] T005 [US1] In `_textField()` (`src/editor.ts`), wrap the rendered
       `<ha-textfield>` in a `.field-row` container (implements T003 for the
       three text fields).
-- [ ] T006 [P] [US1] Restyle the `.row-actions` remove/move `ha-icon-button`s
+- [X] T006 [P] [US1] Restyle the `.row-actions` remove/move `ha-icon-button`s
       in `editorStyles` (`src/styles.ts`) — spacing, icon treatment,
       hover/focus state — so they read as part of the same restyled section
       chrome rather than an unstyled leftover (FR-010).
-- [ ] T007 [US1] Audit all rules touched or added in `editorStyles`
+- [X] T007 [US1] Audit all rules touched or added in `editorStyles`
       (`src/styles.ts`) — `.field-row`, `.row-actions`, existing
       `ha-expansion-panel`/`.appliance-row` rules — and confirm every color
       value is a Home Assistant theme CSS custom property (FR-004,
@@ -122,7 +122,7 @@ expands only that section (spec User Story 2 Independent Test).
 
 ### Tests for User Story 2
 
-- [ ] T009 [P] [US2] In `tests/component/editor.test.ts`, add an assertion
+- [X] T009 [P] [US2] In `tests/component/editor.test.ts`, add an assertion
       that each appliance's `ha-expansion-panel` contains a child
       `<ha-icon slot="leading-icon">` whose `icon` attribute equals the
       appliance's configured `icon` when set, and the fallback icon
@@ -133,12 +133,12 @@ expands only that section (spec User Story 2 Independent Test).
 
 ### Implementation for User Story 2
 
-- [ ] T010 [US2] In `src/editor.ts`, add a local fallback-icon constant
+- [X] T010 [US2] In `src/editor.ts`, add a local fallback-icon constant
       (value `'mdi:power-plug'`, intentionally mirroring `DEFAULT_ICON` in
       `src/ha-simple-appliance-card.ts` per research.md §3 — duplicated
       rather than imported, since this feature's file scope is
       `src/editor.ts`/`src/styles.ts` only per plan.md).
-- [ ] T011 [US2] In `_renderRow()` (`src/editor.ts`), add
+- [X] T011 [US2] In `_renderRow()` (`src/editor.ts`), add
       `<ha-icon slot="leading-icon" icon=${appliance.icon ?? FALLBACK_ICON}>`
       as a child of each appliance's `ha-expansion-panel` (implements T009).
 - [ ] T013 [US2] Manual: run `quickstart.md` steps 4–5 (independent
@@ -167,7 +167,7 @@ Test).
 
 ### Tests for User Story 3
 
-- [ ] T014 [P] [US3] In `tests/component/editor.test.ts`, add/extend
+- [X] T014 [P] [US3] In `tests/component/editor.test.ts`, add/extend
       assertions confirming `[data-field="new-appliance-type"]` remains a
       native `<select>` element that still fires `change` via the existing
       `selectType()` helper, and that `.add-appliance` still produces the
@@ -176,10 +176,10 @@ Test).
 
 ### Implementation for User Story 3
 
-- [ ] T015 [US3] In `_renderAddAppliance()` (`src/editor.ts`), wrap the type
+- [X] T015 [US3] In `_renderAddAppliance()` (`src/editor.ts`), wrap the type
       `<select>` in a `.field-row` container (reusing Phase 2's shared
       class).
-- [ ] T016 [US3] In `editorStyles` (`src/styles.ts`): set `appearance: none`
+- [X] T016 [US3] In `editorStyles` (`src/styles.ts`): set `appearance: none`
       on the type `<select>`, add a decorative, `pointer-events: none`
       chevron icon positioned inside its `.field-row` wrapper (research.md
       §5), and remove the now-superseded `.add-appliance-row select`
@@ -206,13 +206,13 @@ click-reliability regression.
       `text-overflow: ellipsis` (and related `overflow`/`white-space` rules)
       to `.field-row`/row-header text in `src/styles.ts` where missing
       (FR-008, spec Edge Cases).
-- [ ] T020 [P] Zero-appliances check (`quickstart.md` step 9): remove all
+- [X] T020 [P] Zero-appliances check (`quickstart.md` step 9): remove all
       appliances and confirm the editor still renders (just the
       add-appliance control) without error.
-- [ ] T021 Update `CHANGELOG.md` with this restyle, per constitution
+- [X] T021 Update `CHANGELOG.md` with this restyle, per constitution
       Technology & Build Standards ("the CHANGELOG MUST be updated in the
       same PR as the change it describes").
-- [ ] T022 Full regression: run `npm run lint && npm test`; confirm zero
+- [X] T022 Full regression: run `npm run lint && npm test`; confirm zero
       changes were needed to any pre-existing assertion in
       `tests/component/editor.test.ts` (SC-002), and confirm by inspection
       that no unstyled raw HTML form control remains visible anywhere in the
